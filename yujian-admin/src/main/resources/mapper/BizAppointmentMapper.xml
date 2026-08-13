@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yujian.admin.mapper.BizAppointmentMapper">
+
+    <resultMap id="AppointResult" type="com.yujian.common.biz.domain.BizAppointment">
+        <id property="id" column="id"/>
+        <result property="clinicId" column="clinic_id"/>
+        <result property="patientId" column="patient_id"/>
+        <result property="doctorId" column="doctor_id"/>
+        <result property="nurseId" column="nurse_id"/>
+        <result property="consultantId" column="consultant_id"/>
+        <result property="startTime" column="start_time"/>
+        <result property="endTime" column="end_time"/>
+        <result property="visitType" column="visit_type"/>
+        <result property="status" column="status"/>
+        <result property="itemId" column="item_id"/>
+        <result property="itemName" column="item_name"/>
+        <result property="triaged" column="triaged"/>
+        <result property="registered" column="registered"/>
+        <result property="remark" column="remark"/>
+        <result property="patientName" column="patient_name"/>
+        <result property="medicalRecordNo" column="medical_record_no"/>
+        <result property="mobile" column="mobile"/>
+        <result property="gender" column="gender"/>
+        <result property="age" column="age"/>
+        <result property="doctorName" column="doctor_name"/>
+        <result property="nurseName" column="nurse_name"/>
+        <result property="consultantName" column="consultant_name"/>
+        <result property="createTime" column="create_time"/>
+    </resultMap>
+
+    <sql id="AppointSelect">
+        SELECT a.*,
+               p.name AS patient_name,
+               p.medical_record_no,
+               p.mobile,
+               p.gender,
+               p.age,
+               d.name AS doctor_name,
+               n.name AS nurse_name,
+               c.name AS consultant_name
+        FROM biz_appointment a
+                 LEFT JOIN biz_patient p ON a.patient_id = p.id AND p.del_flag = 0
+                 LEFT JOIN sys_employee d ON a.doctor_id = d.id AND d.del_flag = 0
+                 LEFT JOIN sys_employee n ON a.nurse_id = n.id AND n.del_flag = 0
+                 LEFT JOIN sys_employee c ON a.consultant_id = c.id AND c.del_flag = 0
+        WHERE a.del_flag = 0
+    </sql>
+
+    <select id="selectAppointmentPage" resultMap="AppointResult">
+        <include refid="AppointSelect"/>
+        <if test="clinicId != null">
+            AND a.clinic_id = #{clinicId}
+        </if>
+        <if test="keyword != null and keyword != ''">
+            AND (p.name LIKE CONCAT('%', #{keyword}, '%')
+                OR p.mobile LIKE CONCAT('%', #{keyword}, '%')
+                OR p.medical_record_no LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        <if test="doctorId != null">
+            AND a.doctor_id = #{doctorId}
+        </if>
+        <if test="consultantId != null">
+            AND a.consultant_id = #{consultantId}
+        </if>
+        <if test="visitType != null">
+            AND a.visit_type = #{visitType}
+        </if>
+        <if test="status != null">
+            AND a.status = #{status}
+        </if>
+        <if test="beginTime != null">
+            AND a.start_time &gt;= #{beginTime}
+        </if>
+        <if test="endTime != null">
+            AND a.start_time &lt;= #{endTime}
+        </if>
+        ORDER BY a.start_time ASC, a.id ASC
+    </select>
+
+    <select id="selectCalendarList" resultMap="AppointResult">
+        <include refid="AppointSelect"/>
+        <if test="clinicId != null">
+            AND a.clinic_id = #{clinicId}
+        </if>
+        <if test="beginTime != null">
+            AND a.start_time &gt;= #{beginTime}
+        </if>
+        <if test="endTime != null">
+            AND a.start_time &lt;= #{endTime}
+        </if>
+        <if test="doctorId != null">
+            AND a.doctor_id = #{doctorId}
+        </if>
+        <if test="statusList != null and statusList.size() &gt; 0">
+            AND a.status IN
+            <foreach collection="statusList" item="st" open="(" separator="," close=")">
+                #{st}
+            </foreach>
+        </if>
+        ORDER BY a.start_time ASC
+    </select>
+
+    <select id="selectTodayStats" resultType="java.util.HashMap">
+        SELECT
+            COUNT(1) AS appointTotal,
+            SUM(CASE WHEN a.status IN (3, 4, 5) THEN 1 ELSE 0 END) AS visitTotal,
+            SUM(CASE WHEN a.visit_type = 1 AND a.status IN (3, 4, 5) THEN 1 ELSE 0 END) AS firstVisit,
+            SUM(CASE WHEN a.visit_type = 2 AND a.status IN (3, 4, 5) THEN 1 ELSE 0 END) AS returnVisit,
+            SUM(CASE WHEN a.status = 1 THEN 1 ELSE 0 END) AS bookedCount,
+            SUM(CASE WHEN a.status = 3 THEN 1 ELSE 0 END) AS arrivedCount,
+            SUM(CASE WHEN a.status = 4 THEN 1 ELSE 0 END) AS treatingCount,
+            SUM(CASE WHEN a.status = 5 THEN 1 ELSE 0 END) AS leftCount
+        FROM biz_appointment a
+        WHERE a.del_flag = 0
+          AND a.clinic_id = #{clinicId}
+          AND a.start_time &gt;= #{dayStart}
+          AND a.start_time &lt; #{dayEnd}
+    </select>
+</mapper>

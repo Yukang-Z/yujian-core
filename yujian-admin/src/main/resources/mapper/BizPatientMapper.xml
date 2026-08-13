@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yujian.admin.mapper.BizPatientMapper">
+
+    <resultMap id="PatientResult" type="com.yujian.common.biz.domain.BizPatient">
+        <id property="id" column="id"/>
+        <result property="clinicId" column="clinic_id"/>
+        <result property="medicalRecordNo" column="medical_record_no"/>
+        <result property="name" column="name"/>
+        <result property="namePinyin" column="name_pinyin"/>
+        <result property="gender" column="gender"/>
+        <result property="starLevel" column="star_level"/>
+        <result property="birthday" column="birthday"/>
+        <result property="age" column="age"/>
+        <result property="mobile" column="mobile"/>
+        <result property="doctorId" column="doctor_id"/>
+        <result property="firstDoctorId" column="first_doctor_id"/>
+        <result property="firstVisitTime" column="first_visit_time"/>
+        <result property="nextVisitTime" column="next_visit_time"/>
+        <result property="oweAmount" column="owe_amount"/>
+        <result property="paidAmount" column="paid_amount"/>
+        <result property="status" column="status"/>
+        <result property="doctorName" column="doctor_name"/>
+        <result property="firstDoctorName" column="first_doctor_name"/>
+        <result property="sourceName" column="source_name"/>
+        <result property="tagNames" column="tag_names"/>
+        <result property="createTime" column="create_time"/>
+    </resultMap>
+
+    <select id="selectPatientPage" resultMap="PatientResult">
+        SELECT p.*,
+               d1.name AS doctor_name,
+               d2.name AS first_doctor_name,
+               s.source_name,
+               (SELECT GROUP_CONCAT(t.tag_name)
+                FROM biz_patient_tag_rel r
+                         LEFT JOIN biz_patient_tag t ON r.tag_id = t.id AND t.del_flag = 0
+                WHERE r.patient_id = p.id) AS tag_names
+        FROM biz_patient p
+                 LEFT JOIN sys_employee d1 ON p.doctor_id = d1.id AND d1.del_flag = 0
+                 LEFT JOIN sys_employee d2 ON p.first_doctor_id = d2.id AND d2.del_flag = 0
+                 LEFT JOIN biz_patient_source s ON p.source_id = s.id AND s.del_flag = 0
+        WHERE p.del_flag = 0
+        <if test="clinicId != null">
+            AND p.clinic_id = #{clinicId}
+        </if>
+        <if test="keyword != null and keyword != ''">
+            AND (p.name LIKE CONCAT('%', #{keyword}, '%')
+                OR p.mobile LIKE CONCAT('%', #{keyword}, '%')
+                OR p.medical_record_no LIKE CONCAT('%', #{keyword}, '%')
+                OR p.name_pinyin LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        <if test="doctorId != null">
+            AND p.doctor_id = #{doctorId}
+        </if>
+        <if test="firstDoctorId != null">
+            AND p.first_doctor_id = #{firstDoctorId}
+        </if>
+        <if test="tagId != null">
+            AND EXISTS (
+                SELECT 1 FROM biz_patient_tag_rel r WHERE r.patient_id = p.id AND r.tag_id = #{tagId}
+            )
+        </if>
+        ORDER BY p.id DESC
+    </select>
+
+    <select id="selectMaxMedicalRecordNo" resultType="java.lang.String">
+        SELECT MAX(medical_record_no)
+        FROM biz_patient
+        WHERE clinic_id = #{clinicId}
+          AND del_flag = 0
+          AND medical_record_no REGEXP '^[0-9]+$'
+    </select>
+</mapper>
