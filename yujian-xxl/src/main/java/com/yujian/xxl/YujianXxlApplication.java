@@ -2,14 +2,14 @@ package com.yujian.xxl;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.cloud.netflix.eureka.EnableEurekaClient;
+import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 
 /**
  * XXL-JOB 调度中心接入说明模块。
  * 正式环境建议直接部署官方 xxl-job-admin，本模块提供统一配置与健康检查入口。
  */
 @SpringBootApplication
-@EnableEurekaClient
+@EnableDiscoveryClient
 public class YujianXxlApplication {
 
     public static void main(String[] args) {

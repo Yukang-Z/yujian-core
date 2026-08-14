@@ -10,12 +10,7 @@ spring:
     username: root
     password: root
 
-eureka:
-  client:
-    service-url:
-      defaultZone: http://127.0.0.1:8761/eureka/
-  instance:
-    prefer-ip-address: true
+# 注册中心见 bootstrap.yml（Nacos）
 
 # 官方调度中心地址（独立部署）
 xxl:

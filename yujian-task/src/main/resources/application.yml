@@ -15,12 +15,7 @@ spring:
     port: 6379
     database: 3
 
-eureka:
-  client:
-    service-url:
-      defaultZone: http://127.0.0.1:8761/eureka/
-  instance:
-    prefer-ip-address: true
+# 注册中心见 bootstrap.yml（Nacos）
 
 xxl:
   job:

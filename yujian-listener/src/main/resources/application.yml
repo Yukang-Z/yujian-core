@@ -25,9 +25,4 @@ spring:
         # 本地未启动 RabbitMQ 时可先关闭，避免启动失败
         auto-startup: false
 
-eureka:
-  client:
-    service-url:
-      defaultZone: http://127.0.0.1:8761/eureka/
-  instance:
-    prefer-ip-address: true
+# 注册中心见 bootstrap.yml（Nacos）

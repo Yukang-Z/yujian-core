@@ -1,0 +1,20 @@
+spring:
+  application:
+    name: yujian-api
+  cloud:
+    nacos:
+      server-addr: 127.0.0.1:8848
+      username: nacos
+      password: nacos
+      discovery:
+        server-addr: ${spring.cloud.nacos.server-addr}
+        namespace: ${nacos.namespace:}
+        group: DEFAULT_GROUP
+      config:
+        server-addr: ${spring.cloud.nacos.server-addr}
+        namespace: ${nacos.namespace:}
+        group: DEFAULT_GROUP
+        file-extension: yml
+
+nacos:
+  namespace:

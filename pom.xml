@@ -13,7 +13,7 @@
 
     <modules>
         <module>yujian-common</module>
-        <module>yujian-eureka</module>
+        <module>yujian-nacos</module>
         <module>yujian-gateway</module>
         <module>yujian-admin</module>
         <module>yujian-api</module>
@@ -28,6 +28,7 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <spring-boot.version>2.3.12.RELEASE</spring-boot.version>
         <spring-cloud.version>Hoxton.SR12</spring-cloud.version>
+        <spring-cloud-alibaba.version>2.2.9.RELEASE</spring-cloud-alibaba.version>
         <mybatis-plus.version>3.4.3</mybatis-plus.version>
         <druid.version>1.2.8</druid.version>
         <hutool.version>5.8.11</hutool.version>
@@ -52,6 +53,13 @@
                 <groupId>org.springframework.cloud</groupId>
                 <artifactId>spring-cloud-dependencies</artifactId>
                 <version>${spring-cloud.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.alibaba.cloud</groupId>
+                <artifactId>spring-cloud-alibaba-dependencies</artifactId>
+                <version>${spring-cloud-alibaba.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
