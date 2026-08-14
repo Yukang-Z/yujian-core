@@ -72,7 +72,8 @@ mvn clean install -DskipTests
 
 也可直连：`http://localhost:8081/system/clinic/list`
 
-接口文档（Admin）：`http://localhost:8081/doc.html`
+接口文档（Admin）：`http://localhost:8081/doc.html`  
+前端联调说明：`document/api/frontend-api.md`
 
 ## 五、系统管理功能
 
