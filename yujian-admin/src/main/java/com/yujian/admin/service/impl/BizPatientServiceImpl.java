@@ -33,6 +33,9 @@ public class BizPatientServiceImpl extends ServiceImpl<BizPatientMapper, BizPati
     @Autowired
     private BizAppointmentMapper appointmentMapper;
 
+    @Autowired
+    private com.yujian.admin.service.PatientLogHelper patientLogHelper;
+
     @Override
     public PageResult<BizPatient> selectPage(String keyword, Long clinicId, Long doctorId,
                                              Long firstDoctorId, Long tagId, long pageNum, long pageSize) {
@@ -75,8 +78,15 @@ public class BizPatientServiceImpl extends ServiceImpl<BizPatientMapper, BizPati
     @Transactional(rollbackFor = Exception.class)
     public int insertPatient(BizPatient patient) {
         fillDefaults(patient);
+        if (StringUtils.isBlank(patient.getCreatorName())
+                && SecurityContextHolder.getLoginUser() != null) {
+            patient.setCreatorName(SecurityContextHolder.getLoginUser().getName());
+        }
         boolean saved = this.save(patient);
         saveTags(patient);
+        if (saved) {
+            patientLogHelper.write(patient.getId(), patient.getClinicId(), "create", "新增患者");
+        }
         return saved ? 1 : 0;
     }
 
@@ -94,6 +104,9 @@ public class BizPatientServiceImpl extends ServiceImpl<BizPatientMapper, BizPati
         if (patient.getTagIds() != null) {
             tagRelMapper.deleteByPatientId(patient.getId());
             saveTags(patient);
+        }
+        if (updated) {
+            patientLogHelper.write(patient.getId(), patient.getClinicId(), "update", "修改患者信息");
         }
         return updated ? 1 : 0;
     }

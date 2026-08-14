@@ -18,7 +18,7 @@ import java.util.List;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@TableName("biz_patient")
+@TableName("t_patient")
 public class BizPatient extends BaseEntity {
 
     private static final long serialVersionUID = 1L;
@@ -66,17 +66,29 @@ public class BizPatient extends BaseEntity {
     /** 身份证号 */
     private String idNumber;
 
+    /** 医保卡号 */
+    private String medicareCardNo;
+
+    /** 医保余额 */
+    private BigDecimal medicareBalance;
+
     /** 省市区 */
     private String province;
     private String city;
     private String district;
     private String address;
 
+    /** 居住区域 */
+    private String residence;
+
     /** 头像 */
     private String avatar;
 
     /** 患者类型 1普通 2临时 */
     private Integer patientType;
+
+    /** 患者分类 */
+    private String patientCategory;
 
     /** 患者来源ID */
     private Long sourceId;
@@ -104,11 +116,33 @@ public class BizPatient extends BaseEntity {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private Date nextVisitTime;
 
+    /** 最近就诊医生 */
+    private Long lastDoctorId;
+
+    /** 最近就诊时间 */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    private Date lastVisitTime;
+
     /** 欠费 */
     private BigDecimal oweAmount;
 
     /** 已收 */
     private BigDecimal paidAmount;
+
+    /** 预交款余额 */
+    private BigDecimal prepayAmount;
+
+    /** 消费总额 */
+    private BigDecimal totalAmount;
+
+    /** 客单价 */
+    private BigDecimal avgAmount;
+
+    /** 转介绍人数 */
+    private Integer referralCount;
+
+    /** 创建人姓名 */
+    private String creatorName;
 
     /** 状态 0正常 1归档 */
     private Integer status;
@@ -118,6 +152,9 @@ public class BizPatient extends BaseEntity {
 
     @TableField(exist = false)
     private String firstDoctorName;
+
+    @TableField(exist = false)
+    private String lastDoctorName;
 
     @TableField(exist = false)
     private String sourceName;

@@ -15,7 +15,7 @@ import java.util.List;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@TableName("sys_role")
+@TableName("t_role")
 public class SysRole extends BaseEntity {
 
     private static final long serialVersionUID = 1L;

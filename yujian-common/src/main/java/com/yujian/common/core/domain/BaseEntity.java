@@ -11,6 +11,7 @@ import java.util.Date;
 
 /**
  * 实体基类
+ * 统一：create_time / update_time / is_delete
  */
 @Data
 public class BaseEntity implements Serializable {
@@ -38,7 +39,8 @@ public class BaseEntity implements Serializable {
     /** 备注 */
     private String remark;
 
-    /** 删除标志（0正常 1删除） */
+    /** 删除标识 0-否 1-是 */
     @TableLogic
-    private Integer delFlag;
+    @TableField("is_delete")
+    private Integer isDelete;
 }

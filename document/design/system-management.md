@@ -3,11 +3,11 @@
 ## 核心关系
 
 ```text
-sys_clinic 1 ---- n sys_dept
-sys_clinic 1 ---- n sys_employee
-sys_dept   1 ---- n sys_employee
-sys_employee n ---- n sys_role     (sys_employee_role)
-sys_role     n ---- n sys_menu     (sys_role_menu)
+t_clinic 1 ---- n t_dept
+t_clinic 1 ---- n t_employee
+t_dept   1 ---- n t_employee
+t_employee n ---- n t_role     (t_employee_role)
+t_role     n ---- n t_menu     (t_role_menu)
 ```
 
 ## 权限模型（RBAC）
@@ -33,7 +33,20 @@ sys_role     n ---- n sys_menu     (sys_role_menu)
 | 工作诊所 | clinic_id |
 | 在职状态 | employ_status |
 | 所属部门 | dept_id |
-| 角色 | 关联 sys_role |
+| 角色 | 关联 t_role |
 | 岗位 | position |
 | 手机关联 | mobile_link |
 | 证件类型 | id_type |
+| 证件号码 | id_number |
+
+## 公共审计字段
+
+所有业务主表统一：
+
+```sql
+`create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+`update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+`is_delete` tinyint(4) NOT NULL DEFAULT '0' COMMENT '删除标识 0-否 1-是',
+```
+
+关联表（`t_employee_role` / `t_role_menu` / `t_patient_tag_rel`）仅保留关联字段，不带逻辑删除。

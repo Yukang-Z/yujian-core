@@ -11,7 +11,7 @@ import java.io.Serializable;
  * 员工角色关联
  */
 @Data
-@TableName("sys_employee_role")
+@TableName("t_employee_role")
 public class SysEmployeeRole implements Serializable {
 
     private static final long serialVersionUID = 1L;

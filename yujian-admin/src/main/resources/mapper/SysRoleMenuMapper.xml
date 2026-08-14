@@ -4,10 +4,10 @@
 <mapper namespace="com.yujian.admin.mapper.SysRoleMenuMapper">
 
     <delete id="deleteByRoleId">
-        DELETE FROM sys_role_menu WHERE role_id = #{roleId}
+        DELETE FROM t_role_menu WHERE role_id = #{roleId}
     </delete>
 
     <select id="selectMenuIdsByRoleId" resultType="java.lang.Long">
-        SELECT menu_id FROM sys_role_menu WHERE role_id = #{roleId}
+        SELECT menu_id FROM t_role_menu WHERE role_id = #{roleId}
     </select>
 </mapper>

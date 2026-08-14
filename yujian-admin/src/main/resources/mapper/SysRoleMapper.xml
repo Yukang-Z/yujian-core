@@ -5,10 +5,10 @@
 
     <select id="selectRolesByEmployeeId" resultType="com.yujian.common.system.domain.SysRole">
         SELECT r.*
-        FROM sys_role r
-                 INNER JOIN sys_employee_role er ON r.id = er.role_id
+        FROM t_role r
+                 INNER JOIN t_employee_role er ON r.id = er.role_id
         WHERE er.employee_id = #{employeeId}
-          AND r.del_flag = 0
+          AND r.is_delete = 0
           AND r.status = 0
         ORDER BY r.sort_order ASC
     </select>

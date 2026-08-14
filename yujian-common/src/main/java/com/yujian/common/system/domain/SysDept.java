@@ -12,7 +12,7 @@ import lombok.EqualsAndHashCode;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@TableName("sys_dept")
+@TableName("t_dept")
 public class SysDept extends BaseEntity {
 
     private static final long serialVersionUID = 1L;

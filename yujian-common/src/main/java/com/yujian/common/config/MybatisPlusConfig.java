@@ -30,7 +30,7 @@ public class MybatisPlusConfig {
             public void insertFill(MetaObject metaObject) {
                 this.strictInsertFill(metaObject, "createTime", Date.class, new Date());
                 this.strictInsertFill(metaObject, "updateTime", Date.class, new Date());
-                this.strictInsertFill(metaObject, "delFlag", Integer.class, 0);
+                this.strictInsertFill(metaObject, "isDelete", Integer.class, 0);
                 Long userId = com.yujian.common.core.context.SecurityContextHolder.getUserId();
                 if (userId != null) {
                     this.strictInsertFill(metaObject, "createBy", Long.class, userId);

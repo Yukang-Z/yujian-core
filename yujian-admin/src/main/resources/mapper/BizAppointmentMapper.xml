@@ -18,6 +18,11 @@
         <result property="itemName" column="item_name"/>
         <result property="triaged" column="triaged"/>
         <result property="registered" column="registered"/>
+        <result property="appointType" column="appoint_type"/>
+        <result property="appointSource" column="appoint_source"/>
+        <result property="cancelReason" column="cancel_reason"/>
+        <result property="itemColor" column="item_color"/>
+        <result property="creatorName" column="creator_name"/>
         <result property="remark" column="remark"/>
         <result property="patientName" column="patient_name"/>
         <result property="medicalRecordNo" column="medical_record_no"/>
@@ -28,6 +33,7 @@
         <result property="nurseName" column="nurse_name"/>
         <result property="consultantName" column="consultant_name"/>
         <result property="createTime" column="create_time"/>
+        <result property="isDelete" column="is_delete"/>
     </resultMap>
 
     <sql id="AppointSelect">
@@ -40,64 +46,42 @@
                d.name AS doctor_name,
                n.name AS nurse_name,
                c.name AS consultant_name
-        FROM biz_appointment a
-                 LEFT JOIN biz_patient p ON a.patient_id = p.id AND p.del_flag = 0
-                 LEFT JOIN sys_employee d ON a.doctor_id = d.id AND d.del_flag = 0
-                 LEFT JOIN sys_employee n ON a.nurse_id = n.id AND n.del_flag = 0
-                 LEFT JOIN sys_employee c ON a.consultant_id = c.id AND c.del_flag = 0
-        WHERE a.del_flag = 0
+        FROM t_appointment a
+                 LEFT JOIN t_patient p ON a.patient_id = p.id AND p.is_delete = 0
+                 LEFT JOIN t_employee d ON a.doctor_id = d.id AND d.is_delete = 0
+                 LEFT JOIN t_employee n ON a.nurse_id = n.id AND n.is_delete = 0
+                 LEFT JOIN t_employee c ON a.consultant_id = c.id AND c.is_delete = 0
+        WHERE a.is_delete = 0
     </sql>
 
     <select id="selectAppointmentPage" resultMap="AppointResult">
         <include refid="AppointSelect"/>
-        <if test="clinicId != null">
-            AND a.clinic_id = #{clinicId}
-        </if>
+        <if test="clinicId != null">AND a.clinic_id = #{clinicId}</if>
         <if test="keyword != null and keyword != ''">
             AND (p.name LIKE CONCAT('%', #{keyword}, '%')
                 OR p.mobile LIKE CONCAT('%', #{keyword}, '%')
                 OR p.medical_record_no LIKE CONCAT('%', #{keyword}, '%'))
         </if>
-        <if test="doctorId != null">
-            AND a.doctor_id = #{doctorId}
-        </if>
-        <if test="consultantId != null">
-            AND a.consultant_id = #{consultantId}
-        </if>
-        <if test="visitType != null">
-            AND a.visit_type = #{visitType}
-        </if>
-        <if test="status != null">
-            AND a.status = #{status}
-        </if>
-        <if test="beginTime != null">
-            AND a.start_time &gt;= #{beginTime}
-        </if>
-        <if test="endTime != null">
-            AND a.start_time &lt;= #{endTime}
-        </if>
+        <if test="doctorId != null">AND a.doctor_id = #{doctorId}</if>
+        <if test="consultantId != null">AND a.consultant_id = #{consultantId}</if>
+        <if test="visitType != null">AND a.visit_type = #{visitType}</if>
+        <if test="status != null">AND a.status = #{status}</if>
+        <if test="appointSource != null and appointSource != ''">AND a.appoint_source = #{appointSource}</if>
+        <if test="patientId != null">AND a.patient_id = #{patientId}</if>
+        <if test="beginTime != null">AND a.start_time &gt;= #{beginTime}</if>
+        <if test="endTime != null">AND a.start_time &lt;= #{endTime}</if>
         ORDER BY a.start_time ASC, a.id ASC
     </select>
 
     <select id="selectCalendarList" resultMap="AppointResult">
         <include refid="AppointSelect"/>
-        <if test="clinicId != null">
-            AND a.clinic_id = #{clinicId}
-        </if>
-        <if test="beginTime != null">
-            AND a.start_time &gt;= #{beginTime}
-        </if>
-        <if test="endTime != null">
-            AND a.start_time &lt;= #{endTime}
-        </if>
-        <if test="doctorId != null">
-            AND a.doctor_id = #{doctorId}
-        </if>
+        <if test="clinicId != null">AND a.clinic_id = #{clinicId}</if>
+        <if test="beginTime != null">AND a.start_time &gt;= #{beginTime}</if>
+        <if test="endTime != null">AND a.start_time &lt;= #{endTime}</if>
+        <if test="doctorId != null">AND a.doctor_id = #{doctorId}</if>
         <if test="statusList != null and statusList.size() &gt; 0">
             AND a.status IN
-            <foreach collection="statusList" item="st" open="(" separator="," close=")">
-                #{st}
-            </foreach>
+            <foreach collection="statusList" item="st" open="(" separator="," close=")">#{st}</foreach>
         </if>
         ORDER BY a.start_time ASC
     </select>
@@ -112,10 +96,70 @@
             SUM(CASE WHEN a.status = 3 THEN 1 ELSE 0 END) AS arrivedCount,
             SUM(CASE WHEN a.status = 4 THEN 1 ELSE 0 END) AS treatingCount,
             SUM(CASE WHEN a.status = 5 THEN 1 ELSE 0 END) AS leftCount
-        FROM biz_appointment a
-        WHERE a.del_flag = 0
+        FROM t_appointment a
+        WHERE a.is_delete = 0
           AND a.clinic_id = #{clinicId}
           AND a.start_time &gt;= #{dayStart}
           AND a.start_time &lt; #{dayEnd}
     </select>
+
+    <select id="selectStatusCount" resultType="java.util.HashMap">
+        SELECT a.status AS status, COUNT(1) AS cnt
+        FROM t_appointment a
+        WHERE a.is_delete = 0
+        <if test="clinicId != null">AND a.clinic_id = #{clinicId}</if>
+        <if test="beginTime != null">AND a.start_time &gt;= #{beginTime}</if>
+        <if test="endTime != null">AND a.start_time &lt;= #{endTime}</if>
+        <if test="doctorId != null">AND a.doctor_id = #{doctorId}</if>
+        GROUP BY a.status
+    </select>
+
+    <select id="countDoctorConflict" resultType="int">
+        SELECT COUNT(1)
+        FROM t_appointment
+        WHERE is_delete = 0
+          AND clinic_id = #{clinicId}
+          AND doctor_id = #{doctorId}
+          AND status NOT IN (6, 7, 8)
+          AND start_time &lt; #{endTime}
+          AND end_time &gt; #{startTime}
+        <if test="excludeId != null">AND id != #{excludeId}</if>
+    </select>
+
+    <select id="selectRecyclePage" resultMap="AppointResult">
+        SELECT a.*,
+               p.name AS patient_name,
+               p.medical_record_no,
+               p.mobile,
+               p.gender,
+               p.age,
+               d.name AS doctor_name,
+               n.name AS nurse_name,
+               c.name AS consultant_name
+        FROM t_appointment a
+                 LEFT JOIN t_patient p ON a.patient_id = p.id
+                 LEFT JOIN t_employee d ON a.doctor_id = d.id
+                 LEFT JOIN t_employee n ON a.nurse_id = n.id
+                 LEFT JOIN t_employee c ON a.consultant_id = c.id
+        WHERE a.is_delete = 1
+        <if test="clinicId != null">AND a.clinic_id = #{clinicId}</if>
+        <if test="keyword != null and keyword != ''">
+            AND (p.name LIKE CONCAT('%', #{keyword}, '%')
+                OR p.mobile LIKE CONCAT('%', #{keyword}, '%')
+                OR p.medical_record_no LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        <if test="doctorId != null">AND a.doctor_id = #{doctorId}</if>
+        <if test="consultantId != null">AND a.consultant_id = #{consultantId}</if>
+        <if test="beginTime != null">AND a.start_time &gt;= #{beginTime}</if>
+        <if test="endTime != null">AND a.start_time &lt;= #{endTime}</if>
+        ORDER BY a.update_time DESC
+    </select>
+
+    <update id="restoreById">
+        UPDATE t_appointment SET is_delete = 0, cancel_reason = NULL WHERE id = #{id} AND is_delete = 1
+    </update>
+
+    <delete id="permanentDeleteById">
+        DELETE FROM t_appointment WHERE id = #{id} AND is_delete = 1
+    </delete>
 </mapper>

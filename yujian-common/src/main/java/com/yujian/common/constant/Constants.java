@@ -20,11 +20,11 @@ public final class Constants {
     /** 停用状态 */
     public static final Integer STATUS_DISABLE = 1;
 
-    /** 删除标志：正常 */
-    public static final Integer DEL_FLAG_NORMAL = 0;
+    /** 删除标识：否 */
+    public static final Integer IS_DELETE_NO = 0;
 
-    /** 删除标志：已删除 */
-    public static final Integer DEL_FLAG_DELETED = 1;
+    /** 删除标识：是 */
+    public static final Integer IS_DELETE_YES = 1;
 
     /** 在职 */
     public static final Integer EMPLOY_STATUS_ON = 1;

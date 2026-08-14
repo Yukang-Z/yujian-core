@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yujian.admin.mapper.BizPatientRelationMapper">
+    <select id="selectByPatientId" resultType="com.yujian.common.biz.domain.BizPatientRelation">
+        SELECT r.*,
+               p.name AS related_name,
+               p.mobile AS related_mobile,
+               p.medical_record_no AS related_medical_record_no
+        FROM t_patient_relation r
+                 LEFT JOIN t_patient p ON r.related_id = p.id AND p.is_delete = 0
+        WHERE r.is_delete = 0
+          AND r.patient_id = #{patientId}
+        ORDER BY r.id DESC
+    </select>
+</mapper>

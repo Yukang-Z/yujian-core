@@ -4,10 +4,10 @@
 <mapper namespace="com.yujian.admin.mapper.BizPatientTagRelMapper">
 
     <delete id="deleteByPatientId">
-        DELETE FROM biz_patient_tag_rel WHERE patient_id = #{patientId}
+        DELETE FROM t_patient_tag_rel WHERE patient_id = #{patientId}
     </delete>
 
     <select id="selectTagIdsByPatientId" resultType="java.lang.Long">
-        SELECT tag_id FROM biz_patient_tag_rel WHERE patient_id = #{patientId}
+        SELECT tag_id FROM t_patient_tag_rel WHERE patient_id = #{patientId}
     </select>
 </mapper>

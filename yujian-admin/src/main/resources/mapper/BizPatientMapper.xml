@@ -34,14 +34,14 @@
                d2.name AS first_doctor_name,
                s.source_name,
                (SELECT GROUP_CONCAT(t.tag_name)
-                FROM biz_patient_tag_rel r
-                         LEFT JOIN biz_patient_tag t ON r.tag_id = t.id AND t.del_flag = 0
+                FROM t_patient_tag_rel r
+                         LEFT JOIN t_patient_tag t ON r.tag_id = t.id AND t.is_delete = 0
                 WHERE r.patient_id = p.id) AS tag_names
-        FROM biz_patient p
-                 LEFT JOIN sys_employee d1 ON p.doctor_id = d1.id AND d1.del_flag = 0
-                 LEFT JOIN sys_employee d2 ON p.first_doctor_id = d2.id AND d2.del_flag = 0
-                 LEFT JOIN biz_patient_source s ON p.source_id = s.id AND s.del_flag = 0
-        WHERE p.del_flag = 0
+        FROM t_patient p
+                 LEFT JOIN t_employee d1 ON p.doctor_id = d1.id AND d1.is_delete = 0
+                 LEFT JOIN t_employee d2 ON p.first_doctor_id = d2.id AND d2.is_delete = 0
+                 LEFT JOIN t_patient_source s ON p.source_id = s.id AND s.is_delete = 0
+        WHERE p.is_delete = 0
         <if test="clinicId != null">
             AND p.clinic_id = #{clinicId}
         </if>
@@ -59,7 +59,7 @@
         </if>
         <if test="tagId != null">
             AND EXISTS (
-                SELECT 1 FROM biz_patient_tag_rel r WHERE r.patient_id = p.id AND r.tag_id = #{tagId}
+                SELECT 1 FROM t_patient_tag_rel r WHERE r.patient_id = p.id AND r.tag_id = #{tagId}
             )
         </if>
         ORDER BY p.id DESC
@@ -67,9 +67,9 @@
 
     <select id="selectMaxMedicalRecordNo" resultType="java.lang.String">
         SELECT MAX(medical_record_no)
-        FROM biz_patient
+        FROM t_patient
         WHERE clinic_id = #{clinicId}
-          AND del_flag = 0
+          AND is_delete = 0
           AND medical_record_no REGEXP '^[0-9]+$'
     </select>
 </mapper>

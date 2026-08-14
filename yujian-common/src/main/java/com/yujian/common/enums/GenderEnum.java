@@ -4,7 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 /**
- * 性别枚举（对应 sys_staff.gender）
+ * 性别枚举（对应 t_employee.gender / t_patient.gender：0女 1男 2未知）
  *
  * @author Zhangyk
  * @date 2026-08-13 15:50
@@ -14,9 +14,9 @@ import lombok.Getter;
 public enum GenderEnum {
 
     /**
-     * 未知
+     * 女
      */
-    UNKNOWN(0, "未知"),
+    FEMALE(0, "女"),
 
     /**
      * 男
@@ -24,9 +24,9 @@ public enum GenderEnum {
     MALE(1, "男"),
 
     /**
-     * 女
+     * 未知
      */
-    FEMALE(2, "女");
+    UNKNOWN(2, "未知");
 
     /**
      * 编码

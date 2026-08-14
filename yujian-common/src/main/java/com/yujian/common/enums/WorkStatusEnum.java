@@ -4,7 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 /**
- * 在职状态枚举（对应 sys_staff.work_status）
+ * 在职状态枚举（对应 t_employee.employ_status）
  *
  * @author Zhangyk
  * @date 2026-08-13 15:50

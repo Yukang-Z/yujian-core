@@ -4,10 +4,10 @@
 <mapper namespace="com.yujian.admin.mapper.SysEmployeeRoleMapper">
 
     <delete id="deleteByEmployeeId">
-        DELETE FROM sys_employee_role WHERE employee_id = #{employeeId}
+        DELETE FROM t_employee_role WHERE employee_id = #{employeeId}
     </delete>
 
     <select id="selectRoleIdsByEmployeeId" resultType="java.lang.Long">
-        SELECT role_id FROM sys_employee_role WHERE employee_id = #{employeeId}
+        SELECT role_id FROM t_employee_role WHERE employee_id = #{employeeId}
     </select>
 </mapper>

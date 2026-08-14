@@ -4,7 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 /**
- * 权限类型枚举（对应 sys_permission.perm_type）
+ * 菜单类型枚举（对应 t_menu.menu_type：M目录/C菜单/F按钮）
  *
  * @author Zhangyk
  * @date 2026-08-13 15:50
@@ -16,22 +16,22 @@ public enum PermissionTypeEnum {
     /**
      * 目录
      */
-    DIRECTORY(1, "目录"),
+    DIRECTORY("M", "目录"),
 
     /**
      * 菜单
      */
-    MENU(2, "菜单"),
+    MENU("C", "菜单"),
 
     /**
      * 按钮
      */
-    BUTTON(3, "按钮");
+    BUTTON("F", "按钮");
 
     /**
-     * 编码
+     * 编码（与库字段一致）
      */
-    private final Integer code;
+    private final String code;
 
     /**
      * 描述
@@ -44,8 +44,8 @@ public enum PermissionTypeEnum {
      * @param code 编码
      * @return 枚举，未匹配返回 null
      */
-    public static PermissionTypeEnum fromCode(Integer code) {
-        if (code == null) {
+    public static PermissionTypeEnum fromCode(String code) {
+        if (code == null || code.isEmpty()) {
             return null;
         }
         for (PermissionTypeEnum item : values()) {

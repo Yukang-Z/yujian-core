@@ -12,7 +12,7 @@ import lombok.EqualsAndHashCode;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@TableName("biz_treat_item")
+@TableName("t_treatment_item")
 public class BizTreatItem extends BaseEntity {
 
     private static final long serialVersionUID = 1L;
@@ -25,6 +25,10 @@ public class BizTreatItem extends BaseEntity {
     private String itemCode;
     /** 默认时长（分钟） */
     private Integer duration;
+
+    /** 日历展示色 */
+    private String itemColor;
+
     private Integer sortOrder;
     private Integer status;
 }

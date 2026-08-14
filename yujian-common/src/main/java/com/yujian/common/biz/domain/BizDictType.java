@@ -12,7 +12,7 @@ import lombok.EqualsAndHashCode;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@TableName("biz_dict_type")
+@TableName("t_dict_type")
 public class BizDictType extends BaseEntity {
 
     private static final long serialVersionUID = 1L;

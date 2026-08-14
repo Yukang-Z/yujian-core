@@ -4,7 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 /**
- * 权限平台枚举（对应 sys_permission.platform）
+ * 权限平台枚举（对应 t_menu.platform：web/mobile）
  *
  * @author Zhangyk
  * @date 2026-08-13 15:50
@@ -16,22 +16,17 @@ public enum PlatformEnum {
     /**
      * 网页版
      */
-    WEB(1, "网页版"),
+    WEB("web", "网页版"),
 
     /**
      * 移动版
      */
-    MOBILE(2, "移动版"),
+    MOBILE("mobile", "移动版");
 
     /**
-     * 数据权限
+     * 编码（与库字段一致）
      */
-    DATA(3, "数据权限");
-
-    /**
-     * 编码
-     */
-    private final Integer code;
+    private final String code;
 
     /**
      * 描述
@@ -44,8 +39,8 @@ public enum PlatformEnum {
      * @param code 编码
      * @return 枚举，未匹配返回 null
      */
-    public static PlatformEnum fromCode(Integer code) {
-        if (code == null) {
+    public static PlatformEnum fromCode(String code) {
+        if (code == null || code.isEmpty()) {
             return null;
         }
         for (PlatformEnum item : values()) {

@@ -36,13 +36,13 @@
                c.clinic_name,
                d.dept_name,
                (SELECT GROUP_CONCAT(r.role_name)
-                FROM sys_employee_role er
-                         LEFT JOIN sys_role r ON er.role_id = r.id AND r.del_flag = 0
+                FROM t_employee_role er
+                         LEFT JOIN t_role r ON er.role_id = r.id AND r.is_delete = 0
                 WHERE er.employee_id = e.id) AS role_names
-        FROM sys_employee e
-                 LEFT JOIN sys_clinic c ON e.clinic_id = c.id AND c.del_flag = 0
-                 LEFT JOIN sys_dept d ON e.dept_id = d.id AND d.del_flag = 0
-        WHERE e.del_flag = 0
+        FROM t_employee e
+                 LEFT JOIN t_clinic c ON e.clinic_id = c.id AND c.is_delete = 0
+                 LEFT JOIN t_dept d ON e.dept_id = d.id AND d.is_delete = 0
+        WHERE e.is_delete = 0
         <if test="keyword != null and keyword != ''">
             AND (e.name LIKE CONCAT('%', #{keyword}, '%')
                 OR e.mobile LIKE CONCAT('%', #{keyword}, '%')

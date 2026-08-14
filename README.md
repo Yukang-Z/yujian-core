@@ -41,10 +41,8 @@
 2. 启动 **Nacos**（单机）：详见 `yujian-nacos/README.md`  
    控制台：http://127.0.0.1:8848/nacos （nacos/nacos）
 3. 启动 MySQL，执行：
-   - `document/sql/01_system_schema.sql`
-   - `document/sql/02_system_data.sql`
-   - `document/sql/03_biz_schema.sql`
-   - `document/sql/04_biz_data.sql`
+   - `document/sql/00_full_schema.sql`
+   - `document/sql/01_init_data.sql`
 4. 启动 Redis（默认 `127.0.0.1:6379`）
 5. （可选）RabbitMQ：监听服务需要
 6. （可选）部署官方 [xxl-job-admin](https://github.com/xuxueli/xxl-job)，默认 `http://127.0.0.1:8085/xxl-job-admin`
@@ -84,13 +82,13 @@ mvn clean install -DskipTests
 
 | 表名 | 说明 |
 |------|------|
-| `sys_clinic` | 诊所管理（支持总分院 parent_id） |
-| `sys_dept` | 部门 |
-| `sys_employee` | 员工（工号、岗位、在职状态、手机关联等） |
-| `sys_role` | 角色（含数据权限 data_scope） |
-| `sys_menu` | 菜单/权限树（web / mobile） |
-| `sys_employee_role` | 员工-角色 |
-| `sys_role_menu` | 角色-菜单 |
+| `t_clinic` | 诊所管理（支持总分院 parent_id） |
+| `t_dept` | 部门 |
+| `t_employee` | 员工（工号、岗位、在职状态、手机关联等） |
+| `t_role` | 角色（含数据权限 data_scope） |
+| `t_menu` | 菜单/权限树（web / mobile） |
+| `t_employee_role` | 员工-角色 |
+| `t_role_menu` | 角色-菜单 |
 
 ### 5.2 登录拦截
 
@@ -175,8 +173,8 @@ mvn clean install -DskipTests
 对照牙医管家截图实现，详细设计见 `document/design/biz-patient-appointment.md`。
 
 初始化 SQL：
-- `document/sql/03_biz_schema.sql`
-- `document/sql/04_biz_data.sql`
+- `document/sql/00_full_schema.sql`
+- `document/sql/01_init_data.sql`
 
 ### 6.1 患者管理 `/biz/patient`
 

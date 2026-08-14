@@ -15,7 +15,7 @@ import java.util.Date;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@TableName("sys_clinic")
+@TableName("t_clinic")
 public class SysClinic extends BaseEntity {
 
     private static final long serialVersionUID = 1L;

@@ -16,7 +16,7 @@ import java.util.List;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@TableName("biz_patient_source")
+@TableName("t_patient_source")
 public class BizPatientSource extends BaseEntity {
 
     private static final long serialVersionUID = 1L;

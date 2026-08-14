@@ -9,7 +9,7 @@
 - Token 存 Redis，拦截器校验并写入 `SecurityContextHolder`
 - 登录时同时缓存 `LoginUser`（含 clinicId、权限）
 
-## 2. 患者管理 `biz_patient`
+## 2. 患者管理 `t_patient`
 
 对应截图「患者列表 + 新增患者弹窗」：
 
@@ -23,7 +23,7 @@
 
 病历号为空时按诊所自增生成（6位）。
 
-## 3. 预约管理 `biz_appointment`
+## 3. 预约管理 `t_appointment`
 
 对应「首页今日任务 + 预约日历」：
 

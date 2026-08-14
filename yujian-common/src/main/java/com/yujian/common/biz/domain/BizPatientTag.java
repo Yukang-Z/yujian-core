@@ -12,7 +12,7 @@ import lombok.EqualsAndHashCode;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@TableName("biz_patient_tag")
+@TableName("t_patient_tag")
 public class BizPatientTag extends BaseEntity {
 
     private static final long serialVersionUID = 1L;

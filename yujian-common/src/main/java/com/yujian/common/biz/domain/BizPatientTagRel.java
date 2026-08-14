@@ -11,7 +11,7 @@ import java.io.Serializable;
  * 患者-标签关联
  */
 @Data
-@TableName("biz_patient_tag_rel")
+@TableName("t_patient_tag_rel")
 public class BizPatientTagRel implements Serializable {
 
     private static final long serialVersionUID = 1L;

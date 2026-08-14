@@ -16,7 +16,7 @@ import java.util.Date;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@TableName("biz_appointment")
+@TableName("t_appointment")
 public class BizAppointment extends BaseEntity {
 
     private static final long serialVersionUID = 1L;
@@ -68,6 +68,21 @@ public class BizAppointment extends BaseEntity {
 
     /** 是否已挂号 */
     private Integer registered;
+
+    /** 预约类型 normal/walkin/online */
+    private String appointType;
+
+    /** 预约来源 clinic/online/wechat */
+    private String appointSource;
+
+    /** 取消/删除原因 */
+    private String cancelReason;
+
+    /** 项目颜色（日历块） */
+    private String itemColor;
+
+    /** 预约人姓名 */
+    private String creatorName;
 
     @TableField(exist = false)
     private String patientName;
