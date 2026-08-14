@@ -1,7 +1,10 @@
 package com.yujian.common.constant;
 
 /**
- * 系统常量
+ * 系统常量（状态、菜单类型、平台、Sa-Token Session Key 等）
+ *
+ * @author Zhangyk
+ * @date 2026-08-14 16:50
  */
 public final class Constants {
 
@@ -47,15 +50,14 @@ public final class Constants {
     /** 平台：移动端 */
     public static final String PLATFORM_MOBILE = "mobile";
 
-    /** 默认密码 */
+    /** 默认密码（新增员工未指定密码时使用） */
     public static final String DEFAULT_PASSWORD = "123456";
 
-    /** Redis Token 前缀 */
-    public static final String REDIS_TOKEN_KEY = "yujian:token:";
+    /**
+     * Sa-Token Session 中存放 {@link com.yujian.common.core.domain.LoginUser} 的 Key
+     */
+    public static final String LOGIN_USER_SESSION_KEY = "loginUser";
 
-    /** Redis 登录用户缓存前缀 */
-    public static final String REDIS_LOGIN_USER_KEY = "yujian:login:user:";
-
-    /** Token 有效期（秒） */
+    /** Token 有效期（秒），与 sa-token.timeout 保持一致 */
     public static final long TOKEN_EXPIRE = 7200L;
 }

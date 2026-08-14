@@ -14,7 +14,10 @@ import java.util.Date;
 import java.util.List;
 
 /**
- * 患者
+ * 患者实体，对应表 t_patient
+ *
+ * @author Zhangyk
+ * @date 2026-08-14 16:50
  */
 @Data
 @EqualsAndHashCode(callSuper = true)

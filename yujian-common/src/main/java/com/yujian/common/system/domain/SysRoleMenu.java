@@ -8,7 +8,10 @@ import lombok.Data;
 import java.io.Serializable;
 
 /**
- * 角色菜单关联
+ * 角色-菜单关联，对应表 t_role_menu
+ *
+ * @author Zhangyk
+ * @date 2026-08-14 16:50
  */
 @Data
 @TableName("t_role_menu")
@@ -16,10 +19,13 @@ public class SysRoleMenu implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
+    /** 主键 */
     @TableId(type = IdType.AUTO)
     private Long id;
 
+    /** 角色ID，关联 t_role.id */
     private Long roleId;
 
+    /** 菜单ID，关联 t_menu.id */
     private Long menuId;
 }

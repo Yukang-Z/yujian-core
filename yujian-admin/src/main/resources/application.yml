@@ -52,6 +52,19 @@ knife4j:
   setting:
     language: zh-CN
 
+# Sa-Token 登录鉴权（Token 存 Redis）
+sa-token:
+  token-name: Authorization
+  token-prefix: Bearer
+  timeout: 7200
+  active-timeout: -1
+  is-concurrent: false
+  is-share: false
+  token-style: uuid
+  is-read-header: true
+  is-read-cookie: false
+  is-log: false
+
 logging:
   level:
     com.yujian: debug

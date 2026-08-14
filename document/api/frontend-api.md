@@ -29,13 +29,15 @@
 
 ## 2. 通用约定
 
-### 2.1 鉴权
+### 2.1 鉴权（Sa-Token）
 
 | 项 | 说明 |
 |----|------|
 | Header | `Authorization: Bearer {token}` |
+| 实现 | Sa-Token + Redis（同账号互踢，`is-concurrent: false`） |
 | 白名单 | `POST /auth/login`（及 Swagger / Actuator） |
-| 其余接口 | 均需携带 Token |
+| 其余接口 | 均需携带有效 Token |
+| Token 有效期 | 7200 秒（2 小时） |
 
 ### 2.2 统一响应 `R<T>`
 
@@ -89,7 +91,7 @@
 
 ---
 
-## 4. 登录鉴权 `/auth`
+## 4. 登录鉴权 `/auth`（Sa-Token）
 
 ### 4.1 登录
 
@@ -108,10 +110,12 @@
 
 ```json
 {
-  "token": "eyJhbGciOi...",
-  "user": { "id": 1, "name": "管理员", "clinicId": 1, "deptId": 1, "username": "admin", "...": "..." }
+  "token": "uuid-token-string",
+  "user": { "id": 1, "name": "管理员", "clinicId": 1, "deptId": 1, "username": "admin" }
 }
 ```
+
+> Token 由 Sa-Token 签发并写入 Redis；请在后续请求 Header 携带：`Authorization: Bearer {token}`
 
 ### 4.2 当前用户信息
 
@@ -119,13 +123,11 @@
 
 **data**：`{ user, roles, menus, permissions }`
 
-### 4.3 指定员工信息
+### 4.3 退出
 
-`GET /auth/info/{employeeId}`
+`POST /auth/logout`（需 Token）
 
-### 4.4 退出
-
-`POST /auth/logout`
+注销当前 Token，Redis 会话同步失效。
 
 ---
 
@@ -532,10 +534,9 @@ axios.interceptors.request.use((config) => {
 ## 11. 接口路径速查（全量）
 
 ```text
-# 鉴权
+# 鉴权（Sa-Token）
 POST   /auth/login
 GET    /auth/info
-GET    /auth/info/{employeeId}
 POST   /auth/logout
 
 # 系统

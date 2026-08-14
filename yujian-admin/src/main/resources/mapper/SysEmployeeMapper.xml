@@ -59,4 +59,38 @@
         </if>
         ORDER BY e.sort_order ASC, e.id ASC
     </select>
+
+    <select id="selectByUsername" resultType="com.yujian.common.system.domain.SysEmployee">
+        SELECT id,
+               name,
+               emp_no,
+               username,
+               password,
+               gender,
+               birthday,
+               mobile,
+               email,
+               clinic_id,
+               dept_id,
+               position,
+               employ_status,
+               mobile_link,
+               id_type,
+               id_number,
+               avatar,
+               entry_date,
+               leave_date,
+               sort_order,
+               status,
+               create_by,
+               create_time,
+               update_by,
+               update_time,
+               remark,
+               is_delete
+        FROM t_employee
+        WHERE username = #{username}
+          AND is_delete = 0
+        LIMIT 1
+    </select>
 </mapper>

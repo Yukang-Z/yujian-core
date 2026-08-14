@@ -10,15 +10,20 @@ import java.io.Serializable;
 import java.util.Date;
 
 /**
- * 实体基类
- * 统一：create_time / update_time / is_delete
+ * 实体公共基类
+ * <p>
+ * 统一审计字段：create_time / update_time / is_delete（TINYINT(4)）
+ * </p>
+ *
+ * @author Zhangyk
+ * @date 2026-08-14 16:50
  */
 @Data
 public class BaseEntity implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    /** 创建人 */
+    /** 创建人ID（员工ID） */
     @TableField(fill = FieldFill.INSERT)
     private Long createBy;
 
@@ -27,7 +32,7 @@ public class BaseEntity implements Serializable {
     @TableField(fill = FieldFill.INSERT)
     private Date createTime;
 
-    /** 更新人 */
+    /** 更新人ID（员工ID） */
     @TableField(fill = FieldFill.INSERT_UPDATE)
     private Long updateBy;
 
@@ -39,7 +44,7 @@ public class BaseEntity implements Serializable {
     /** 备注 */
     private String remark;
 
-    /** 删除标识 0-否 1-是 */
+    /** 删除标识：0否 1是 */
     @TableLogic
     @TableField("is_delete")
     private Integer isDelete;

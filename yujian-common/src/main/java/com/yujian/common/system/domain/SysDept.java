@@ -8,7 +8,10 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 /**
- * 部门实体
+ * 部门实体，对应表 t_dept
+ *
+ * @author Zhangyk
+ * @date 2026-08-14 16:50
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
@@ -17,13 +20,14 @@ public class SysDept extends BaseEntity {
 
     private static final long serialVersionUID = 1L;
 
+    /** 部门ID */
     @TableId(type = IdType.AUTO)
     private Long id;
 
-    /** 所属诊所ID */
+    /** 所属诊所ID，关联 t_clinic.id */
     private Long clinicId;
 
-    /** 父部门ID */
+    /** 父部门ID（0 为顶级） */
     private Long parentId;
 
     /** 部门名称 */
@@ -38,9 +42,9 @@ public class SysDept extends BaseEntity {
     /** 联系电话 */
     private String phone;
 
-    /** 排序 */
+    /** 排序号，越小越靠前 */
     private Integer sortOrder;
 
-    /** 状态（0正常 1停用） */
+    /** 状态：0正常 1停用 */
     private Integer status;
 }

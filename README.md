@@ -33,7 +33,7 @@
 - Gateway
 - XXL-JOB 2.3.1
 - Knife4j（接口文档）
-- Hutool / Lombok / Fastjson / JJWT
+- Hutool / Lombok / Fastjson / Sa-Token
 
 ## 三、环境准备
 
@@ -93,10 +93,9 @@ mvn clean install -DskipTests
 
 ### 5.2 登录拦截
 
-- 请求头携带：`Authorization: Bearer {token}`
+- Sa-Token + Redis 会话；Header：`Authorization: Bearer {token}`
 - 白名单：`/auth/login`、Knife4j、Actuator
-- Token + LoginUser 缓存 Redis，过期自动续期
-- 当前用户：`SecurityContextHolder.getLoginUser()`
+- 当前用户：`SecurityContextHolder.getLoginUser()`（由 Sa-Token Session 同步）
 
 登录：`POST /auth/login`  
 当前用户：`GET /auth/info`  

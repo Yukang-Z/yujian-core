@@ -12,7 +12,13 @@ import lombok.EqualsAndHashCode;
 import java.util.Date;
 
 /**
- * 预约
+ * 预约实体，对应表 t_appointment
+ * <p>
+ * 状态：1已预约 2已确认 3已到达 4治疗中 5已离开 6已过期 7已流失 8预约未到
+ * </p>
+ *
+ * @author Zhangyk
+ * @date 2026-08-14 16:50
  */
 @Data
 @EqualsAndHashCode(callSuper = true)

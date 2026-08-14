@@ -11,7 +11,10 @@ import lombok.EqualsAndHashCode;
 import java.util.Date;
 
 /**
- * 诊所实体
+ * 诊所实体，对应表 t_clinic
+ *
+ * @author Zhangyk
+ * @date 2026-08-14 16:50
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
@@ -20,16 +23,17 @@ public class SysClinic extends BaseEntity {
 
     private static final long serialVersionUID = 1L;
 
+    /** 诊所ID */
     @TableId(type = IdType.AUTO)
     private Long id;
 
-    /** 父诊所ID（0为总部） */
+    /** 父诊所ID（0 为总部） */
     private Long parentId;
 
     /** 诊所名称 */
     private String clinicName;
 
-    /** 诊所编码 */
+    /** 诊所编码（唯一） */
     private String clinicCode;
 
     /** 诊所简称 */
@@ -56,13 +60,13 @@ public class SysClinic extends BaseEntity {
     /** 营业时间 */
     private String businessHours;
 
-    /** Logo */
+    /** Logo 地址 */
     private String logo;
 
-    /** 排序 */
+    /** 排序号，越小越靠前 */
     private Integer sortOrder;
 
-    /** 状态（0正常 1停用） */
+    /** 状态：0正常 1停用 */
     private Integer status;
 
     /** 开业日期 */
