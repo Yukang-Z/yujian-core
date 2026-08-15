@@ -1,0 +1,21 @@
+# uat 环境
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://127.0.0.1:3306/xxl_job?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    username: ${DB_USERNAME:yujian}
+    password: ${DB_PASSWORD:yujian}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://eureka-uat:8761/eureka/
+
+xxl:
+  job:
+    admin:
+      addresses: http://xxl-uat:8085/xxl-job-admin
+
+logging:
+  level:
+    root: info

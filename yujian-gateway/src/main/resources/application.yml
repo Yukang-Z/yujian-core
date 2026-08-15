@@ -4,11 +4,8 @@ server:
 spring:
   application:
     name: yujian-gateway
-  redis:
-    host: 127.0.0.1
-    port: 6379
-    password:
-    database: 0
+  profiles:
+    active: test
   cloud:
     gateway:
       discovery:
@@ -29,7 +26,12 @@ spring:
           filters:
             - StripPrefix=1
 
-# 注册中心见 bootstrap.yml（Nacos）
+eureka:
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    prefer-ip-address: true
 
 logging:
   level:

@@ -4,17 +4,16 @@ server:
 spring:
   application:
     name: yujian-xxl
-  datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://127.0.0.1:3306/xxl_job?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
-    username: root
-    password: root
+  profiles:
+    active: test
 
-# 注册中心见 bootstrap.yml（Nacos）
+eureka:
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    prefer-ip-address: true
 
-# 官方调度中心地址（独立部署）
 xxl:
   job:
-    admin:
-      addresses: http://127.0.0.1:8085/xxl-job-admin
     accessToken: default_token

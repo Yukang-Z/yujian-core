@@ -4,25 +4,12 @@ server:
 spring:
   application:
     name: yujian-listener
-  datasource:
-    type: com.alibaba.druid.pool.DruidDataSource
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://127.0.0.1:3306/yujian?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
-    username: root
-    password: root
-  redis:
-    host: 127.0.0.1
-    port: 6379
-    database: 2
-  rabbitmq:
-    host: 127.0.0.1
-    port: 5672
-    username: guest
-    password: guest
-    virtual-host: /
-    listener:
-      simple:
-        # 本地未启动 RabbitMQ 时可先关闭，避免启动失败
-        auto-startup: false
+  profiles:
+    active: test
 
-# 注册中心见 bootstrap.yml（Nacos）
+eureka:
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    prefer-ip-address: true

@@ -102,7 +102,7 @@ public class SysEmployee extends BaseEntity {
     @TableField(exist = false)
     private String deptName;
 
-    /** 角色ID列表（非表字段，保存时写入关联表） */
+    /** 角色ID列表（非表字段；列表/详情返回；更新时 null=不改，非 null=全量同步） */
     @TableField(exist = false)
     private List<Long> roleIds;
 

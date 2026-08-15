@@ -1,0 +1,17 @@
+# prod 环境
+server:
+  port: 8761
+
+eureka:
+  instance:
+    hostname: eureka-prod
+  client:
+    service-url:
+      defaultZone: http://eureka-prod:8761/eureka/
+  server:
+    # 生产建议开启自我保护
+    enable-self-preservation: true
+
+logging:
+  level:
+    root: warn

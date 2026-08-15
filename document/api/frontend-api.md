@@ -106,6 +106,9 @@
 }
 ```
 
+> Header：`Content-Type: application/json`  
+> Body 必须是原始 JSON，不要写成 `{ \"username\": \"admin\" }` 这种带反斜杠的形式（Postman/Apifox 选 raw → JSON）。
+
 **data**
 
 ```json
@@ -179,8 +182,9 @@
 |------|------|------|
 | GET | `/system/employee/list` | Query：`keyword?` `clinicId?` `deptId?` `employStatus?` `pageNum` `pageSize` |
 | GET | `/system/employee/{id}` | Path：`id` |
-| POST | `/system/employee` | Body：`SysEmployee`（可含 `roleIds: Long[]`） |
-| PUT | `/system/employee` | Body：`SysEmployee` |
+| POST | `/system/employee` | Body：`SysEmployee`（可含 `roleIds`） |
+| PUT | `/system/employee` | Body：`SysEmployee`（见下方更新约定） |
+| PUT | `/system/employee/status` | Body：`{ "id": 1, "status": 0\|1 }` 仅启停 |
 | DELETE | `/system/employee/{id}` | Path：`id` |
 | PUT | `/system/employee/resetPwd` | Body：`{ "id": 1, "password": "新密码" }` |
 | PUT | `/system/employee/sort/{id}/{direction}` | Path：`direction` = `up` \| `down` |
@@ -194,14 +198,24 @@
 | birthday | yyyy-MM-dd |
 | mobile / email | 手机 / 邮箱 |
 | clinicId / deptId | 诊所 / 部门 |
-| position | 岗位 |
+| position | 岗位（自由文本，暂未字典化） |
 | employStatus | 1在职 0离职 |
 | mobileLink | 1允许手机端 0不允许 |
 | idType / idNumber | 证件 |
 | avatar | 头像 |
 | entryDate / leaveDate | 入职/离职 |
 | sortOrder / status | 排序 / 0正常1停用 |
-| roleIds | 角色ID列表（非表字段，保存时用） |
+| roleIds | 角色ID列表（列表/详情均返回；保存约定见下） |
+| roleNames | 角色名称逗号拼接（列表联查） |
+
+**修改约定（重要）**
+
+| 场景 | 怎么做 |
+|------|--------|
+| 改基础资料 | `PUT /system/employee`，`id` 必填；建议带齐表单字段（MyBatis-Plus `updateById` 会更新非 null 字段） |
+| 角色 | `roleIds == null`：**不改**原关联；`roleIds` 有值（含 `[]`）：全量同步；`[]` 表示清空角色 |
+| 密码 | **禁止**走 PUT 员工；只用 `PUT /system/employee/resetPwd` |
+| 仅启停 | 优先 `PUT /system/employee/status`，`{ "id", "status" }`，不碰角色与其它字段 |
 
 ### 5.4 角色 `/system/role`
 
@@ -542,7 +556,7 @@ POST   /auth/logout
 # 系统
 GET|POST|PUT|DELETE  /system/clinic...
 GET|POST|PUT|DELETE  /system/dept...
-GET|POST|PUT|DELETE  /system/employee...  (+ resetPwd / sort)
+GET|POST|PUT|DELETE  /system/employee...  (+ status / resetPwd / sort)
 GET|POST|PUT|DELETE  /system/role...      (+ auth / menus / move)
 GET|POST|PUT|DELETE  /system/menu...      (+ tree / employee menus|perms)
 

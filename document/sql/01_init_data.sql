@@ -71,7 +71,7 @@ SELECT 1, id FROM `t_menu` WHERE is_delete = 0;
 -- 管理员账号（密码：123456，BCrypt）
 INSERT INTO `t_employee` (`id`, `name`, `emp_no`, `username`, `password`, `gender`, `mobile`, `clinic_id`, `dept_id`, `position`, `employ_status`, `mobile_link`, `id_type`, `sort_order`, `status`)
 VALUES (1, '管理员', '001', 'admin',
-        '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2',
+        '$2a$10$9azfvb1/7NDfZvexAcRdmOzC7sqySzyYDvP3u350XB5zmqzDCUak2',
         1, '13800000000', 1, 1, '医生', 1, 1, '身份证', 1, 0);
 
 INSERT INTO `t_employee_role` (`employee_id`, `role_id`) VALUES (1, 1);

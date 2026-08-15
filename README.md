@@ -1,6 +1,6 @@
 # 宇健口腔医疗系统（yujian-core）
 
-基于 **JDK 8 + Spring Boot 2.3 + Spring Cloud Hoxton + Spring Cloud Alibaba** 的口腔医疗微服务架构，集成 **MySQL**、**Redis**、**Nacos（注册中心 + 配置中心）**、**Gateway**、**XXL-JOB**。
+基于 **JDK 8 + Spring Boot 2.3 + Spring Cloud Hoxton** 的口腔医疗微服务架构，集成 **MySQL**、**Redis**、**Eureka（注册中心）**、**Gateway**、**XXL-JOB**。
 
 ## 一、模块说明
 
@@ -8,7 +8,7 @@
 |------|------|----------|
 | `document` | 项目文档、SQL 脚本 | - |
 | `yujian-common` | 公共实体、工具、统一响应、Redis/MyBatis 配置 | - |
-| `yujian-nacos` | Nacos 接入说明与示例配置（服务端独立部署） | 8848 |
+| `yujian-eureka` | Eureka 注册中心 | 8761 |
 | `yujian-gateway` | API 网关 | 8080 |
 | `yujian-admin` | Web 端核心业务（系统管理等） | 8081 |
 | `yujian-api` | 客户端（移动端）核心接口 | 8082 |
@@ -17,15 +17,14 @@
 | `yujian-xxl` | 调度中心接入说明模块（建议独立部署官方 admin） | 8086 |
 
 包名统一：`com.yujian.*`  
-本地配置：`bootstrap.yml`（Nacos）+ `application.yml`（业务兜底）
+配置：`application.yml`（公共）+ `application-{test|uat|prod}.yml`（环境）
 
 ## 二、技术栈
 
 - JDK 8
 - Spring Boot 2.3.12.RELEASE
 - Spring Cloud Hoxton.SR12
-- Spring Cloud Alibaba 2.2.9.RELEASE
-- Nacos Discovery + Nacos Config
+- Eureka（Netflix）注册中心
 - MyBatis-Plus 3.4.3
 - Druid 连接池
 - MySQL 5.7+/8.x
@@ -38,25 +37,24 @@
 ## 三、环境准备
 
 1. 安装 JDK 8、Maven 3.6+
-2. 启动 **Nacos**（单机）：详见 `yujian-nacos/README.md`  
-   控制台：http://127.0.0.1:8848/nacos （nacos/nacos）
-3. 启动 MySQL，执行：
+2. 启动 MySQL，执行：
    - `document/sql/00_full_schema.sql`
    - `document/sql/01_init_data.sql`
-4. 启动 Redis（默认 `127.0.0.1:6379`）
-5. （可选）RabbitMQ：监听服务需要
-6. （可选）部署官方 [xxl-job-admin](https://github.com/xuxueli/xxl-job)，默认 `http://127.0.0.1:8085/xxl-job-admin`
+3. 启动 Redis（默认 `127.0.0.1:6379`）
+4. （可选）RabbitMQ：监听服务需要
+5. （可选）部署官方 [xxl-job-admin](https://github.com/xuxueli/xxl-job)，默认 `http://127.0.0.1:8085/xxl-job-admin`
 
-修改各服务 `application.yml` / Nacos 中的数据库账号密码与 Redis 地址。  
-可选：将 `yujian-nacos/config-example/` 下示例配置发布到 Nacos。
+环境配置在各服务 `application-test.yml` / `application-uat.yml` / `application-prod.yml`，默认 `spring.profiles.active=test`。  
+切换环境：`-Dspring.profiles.active=uat` 或 `prod`。
 
 ## 四、启动顺序
 
 ```text
-1. Nacos Server（8848）
-2. yujian-gateway
-3. yujian-admin / yujian-api
-4. yujian-listener / yujian-task / yujian-xxl（按需）
+1. MySQL / Redis
+2. yujian-eureka（8761）
+3. yujian-admin（8081）
+4. yujian-gateway（8080，按需）
+5. yujian-api / listener / task / xxl（按需）
 ```
 
 本地编译：
@@ -128,10 +126,11 @@ mvn clean install -DskipTests
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
-| GET | `/list` | 分页列表（keyword/clinicId/deptId/employStatus） |
+| GET | `/list` | 分页列表（含 roleIds） |
 | GET | `/{id}` | 详情（含 roleIds） |
 | POST | `/` | 新增（含角色绑定） |
-| PUT | `/` | 修改 |
+| PUT | `/` | 修改（roleIds 为 null 不改角色；密码勿传） |
+| PUT | `/status` | 仅启停 `{ id, status }` |
 | DELETE | `/{id}` | 删除 |
 | PUT | `/resetPwd` | 重置密码 |
 | PUT | `/sort/{id}/{direction}` | 上移/下移（up/down） |
@@ -220,7 +219,7 @@ mvn clean install -DskipTests
 yujian-core
 ├── document/                 # 文档与 SQL
 ├── yujian-common/            # 公共模块
-├── yujian-nacos/             # Nacos 说明与示例配置
+├── yujian-eureka/            # Eureka 注册中心
 ├── yujian-gateway/           # 网关
 ├── yujian-admin/             # Web 业务
 ├── yujian-api/               # 客户端接口
@@ -237,7 +236,7 @@ yujian-core
 2. 数据权限（按诊所/部门/本人过滤）
 3. 收费结算、回访、电子病历
 4. 操作日志、登录日志
-5. 配置全面迁入 Nacos，本地仅保留 bootstrap
+5. 按需引入配置中心（如继续用 yml 多环境即可）
 
 ## 九、许可证
 

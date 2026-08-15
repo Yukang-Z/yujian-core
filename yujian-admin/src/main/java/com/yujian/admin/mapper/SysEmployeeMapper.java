@@ -39,4 +39,13 @@ public interface SysEmployeeMapper extends BaseMapper<SysEmployee> {
      * @return 员工，不存在为 null
      */
     SysEmployee selectByUsername(@Param("username") String username);
+
+    /**
+     * 仅更新账号启用/停用状态
+     *
+     * @param id     员工ID
+     * @param status 0正常 1停用
+     * @return 影响行数
+     */
+    int updateStatusById(@Param("id") Long id, @Param("status") Integer status);
 }

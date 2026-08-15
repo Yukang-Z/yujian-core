@@ -1,0 +1,16 @@
+# uat 环境
+spring:
+  redis:
+    host: 127.0.0.1
+    port: 6379
+    password: ${REDIS_PASSWORD:}
+    database: 0
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://eureka-uat:8761/eureka/
+
+logging:
+  level:
+    root: info

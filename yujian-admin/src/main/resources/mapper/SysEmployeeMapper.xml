@@ -93,4 +93,12 @@
           AND is_delete = 0
         LIMIT 1
     </select>
+
+    <update id="updateStatusById">
+        UPDATE t_employee
+        SET status = #{status},
+            update_time = NOW()
+        WHERE id = #{id}
+          AND is_delete = 0
+    </update>
 </mapper>

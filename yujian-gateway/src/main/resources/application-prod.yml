@@ -1,0 +1,17 @@
+# prod 环境
+spring:
+  redis:
+    host: 127.0.0.1
+    port: 6379
+    password: ${REDIS_PASSWORD}
+    database: 0
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://eureka-prod:8761/eureka/
+
+logging:
+  level:
+    root: warn
+    org.springframework.cloud.gateway: info

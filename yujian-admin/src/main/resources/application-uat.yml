@@ -1,0 +1,39 @@
+# uat 环境
+spring:
+  datasource:
+    type: com.alibaba.druid.pool.DruidDataSource
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://127.0.0.1:3306/yujian?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    username: ${DB_USERNAME:yujian}
+    password: ${DB_PASSWORD:yujian}
+    druid:
+      initial-size: 5
+      min-idle: 5
+      max-active: 30
+      max-wait: 60000
+  redis:
+    host: 127.0.0.1
+    port: 6379
+    password: ${REDIS_PASSWORD:}
+    database: 0
+    timeout: 5000ms
+    lettuce:
+      pool:
+        max-active: 16
+        max-wait: -1ms
+        max-idle: 8
+        min-idle: 0
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://eureka-uat:8761/eureka/
+
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+
+logging:
+  level:
+    com.yujian: info
+    root: info
