@@ -17,19 +17,17 @@ import org.apache.ibatis.annotations.Param;
 public interface SysEmployeeMapper extends BaseMapper<SysEmployee> {
 
     /**
-     * 员工分页查询（含诊所名、部门名、角色名）
+     * 员工分页查询（含诊所名、角色名）
      *
      * @param page         分页参数
      * @param keyword      姓名/手机/工号关键字
      * @param clinicId     诊所ID
-     * @param deptId       部门ID
      * @param employStatus 在职状态
      * @return 分页结果
      */
     IPage<SysEmployee> selectEmployeePage(Page<SysEmployee> page,
                                           @Param("keyword") String keyword,
                                           @Param("clinicId") Long clinicId,
-                                          @Param("deptId") Long deptId,
                                           @Param("employStatus") Integer employStatus);
 
     /**

@@ -48,10 +48,10 @@ public class BizChargeRecord extends BaseEntity {
     /** 欠费金额 */
     private BigDecimal oweAmount;
 
-    /** 支付方式 */
+    /** 支付方式：cash现金 / wechat微信 / alipay支付宝 / card刷卡 */
     private String payMethod;
 
-    /** 收费状态 */
+    /** 收费状态：0待收 1部分 2已结清 */
     private Integer chargeStatus;
 
     /** 收费时间 */

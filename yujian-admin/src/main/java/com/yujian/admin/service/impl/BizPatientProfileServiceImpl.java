@@ -53,9 +53,7 @@ public class BizPatientProfileServiceImpl implements IBizPatientProfileService {
     @Override
     public PageResult<BizPatient> sidebar(String type, Long clinicId, String keyword, Date day,
                                           long pageNum, long pageSize) {
-        if (clinicId == null) {
-            clinicId = SecurityContextHolder.getClinicId();
-        }
+        clinicId = SecurityContextHolder.requireClinicId(clinicId);
         String t = StringUtils.defaultIfBlank(type, "all").toLowerCase();
         PageResult<BizPatient> page;
         if ("today".equals(t)) {
@@ -145,7 +143,7 @@ public class BizPatientProfileServiceImpl implements IBizPatientProfileService {
                                                    Date beginTime, Date endTime) {
         List<BizAppointment> appts = appointmentMapper.selectAppointmentPage(
                 new Page<BizAppointment>(1, 200),
-                clinicId != null ? clinicId : SecurityContextHolder.getClinicId(),
+                SecurityContextHolder.requireClinicId(clinicId),
                 null, null, null, null, null, null, patientId, beginTime, endTime).getRecords();
         List<Map<String, Object>> timeline = new ArrayList<Map<String, Object>>();
         if (appts != null) {

@@ -26,11 +26,14 @@ public class LoginUser implements Serializable {
     /** 员工姓名 */
     private String name;
 
-    /** 当前工作诊所ID，对应 t_clinic.id */
+    /** 当前工作诊所ID（登录后选择诊所写入 Session） */
     private Long clinicId;
 
-    /** 所属部门ID，对应 t_dept.id */
-    private Long deptId;
+    /** 当前工作诊所名称 */
+    private String clinicName;
+
+    /** 员工可进入的诊所ID列表 */
+    private List<Long> clinicIds;
 
     /** 当前请求 Token 值 */
     private String token;

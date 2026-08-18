@@ -13,10 +13,8 @@
         <result property="mobile" column="mobile"/>
         <result property="email" column="email"/>
         <result property="clinicId" column="clinic_id"/>
-        <result property="deptId" column="dept_id"/>
         <result property="position" column="position"/>
         <result property="employStatus" column="employ_status"/>
-        <result property="mobileLink" column="mobile_link"/>
         <result property="idType" column="id_type"/>
         <result property="idNumber" column="id_number"/>
         <result property="avatar" column="avatar"/>
@@ -25,23 +23,44 @@
         <result property="sortOrder" column="sort_order"/>
         <result property="status" column="status"/>
         <result property="clinicName" column="clinic_name"/>
-        <result property="deptName" column="dept_name"/>
         <result property="roleNames" column="role_names"/>
+        <result property="clinicNames" column="clinic_names"/>
         <result property="remark" column="remark"/>
         <result property="createTime" column="create_time"/>
     </resultMap>
 
     <select id="selectEmployeePage" resultMap="EmployeeResult">
-        SELECT e.*,
+        SELECT e.id,
+               e.name,
+               e.emp_no,
+               e.username,
+               e.gender,
+               e.birthday,
+               e.mobile,
+               e.email,
+               e.clinic_id,
+               e.position,
+               e.employ_status,
+               e.id_type,
+               e.id_number,
+               e.avatar,
+               e.entry_date,
+               e.leave_date,
+               e.sort_order,
+               e.status,
+               e.remark,
+               e.create_time,
                c.clinic_name,
-               d.dept_name,
                (SELECT GROUP_CONCAT(r.role_name)
                 FROM t_employee_role er
                          LEFT JOIN t_role r ON er.role_id = r.id AND r.is_delete = 0
-                WHERE er.employee_id = e.id) AS role_names
+                WHERE er.employee_id = e.id) AS role_names,
+               (SELECT GROUP_CONCAT(c2.clinic_name ORDER BY c2.sort_order, c2.id)
+                FROM t_employee_clinic ec2
+                         LEFT JOIN t_clinic c2 ON ec2.clinic_id = c2.id AND c2.is_delete = 0
+                WHERE ec2.employee_id = e.id) AS clinic_names
         FROM t_employee e
                  LEFT JOIN t_clinic c ON e.clinic_id = c.id AND c.is_delete = 0
-                 LEFT JOIN t_dept d ON e.dept_id = d.id AND d.is_delete = 0
         WHERE e.is_delete = 0
         <if test="keyword != null and keyword != ''">
             AND (e.name LIKE CONCAT('%', #{keyword}, '%')
@@ -49,10 +68,10 @@
                 OR e.emp_no LIKE CONCAT('%', #{keyword}, '%'))
         </if>
         <if test="clinicId != null">
-            AND e.clinic_id = #{clinicId}
-        </if>
-        <if test="deptId != null">
-            AND e.dept_id = #{deptId}
+            AND EXISTS (
+                SELECT 1 FROM t_employee_clinic ec
+                WHERE ec.employee_id = e.id AND ec.clinic_id = #{clinicId}
+            )
         </if>
         <if test="employStatus != null">
             AND e.employ_status = #{employStatus}
@@ -71,10 +90,8 @@
                mobile,
                email,
                clinic_id,
-               dept_id,
                position,
                employ_status,
-               mobile_link,
                id_type,
                id_number,
                avatar,

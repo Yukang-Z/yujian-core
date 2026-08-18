@@ -44,6 +44,9 @@ public class BizBasicDataServiceImpl implements IBizBasicDataService {
     @Autowired
     private SysEmployeeMapper employeeMapper;
 
+    @Autowired
+    private com.yujian.admin.mapper.SysEmployeeClinicMapper employeeClinicMapper;
+
     @Override
     public List<BizDictData> selectDictByType(String dictType) {
         return dictDataMapper.selectList(new LambdaQueryWrapper<BizDictData>()
@@ -209,9 +212,12 @@ public class BizBasicDataServiceImpl implements IBizBasicDataService {
     @Override
     public List<?> selectDoctorList(Long clinicId) {
         clinicId = resolveClinicId(clinicId);
-        // 岗位含医生，或角色后续可扩展；先按岗位/在职筛选
+        List<Long> employeeIds = employeeClinicMapper.selectEmployeeIdsByClinicId(clinicId);
+        if (employeeIds == null || employeeIds.isEmpty()) {
+            return new ArrayList<SysEmployee>();
+        }
         return employeeMapper.selectList(new LambdaQueryWrapper<SysEmployee>()
-                .eq(clinicId != null, SysEmployee::getClinicId, clinicId)
+                .in(SysEmployee::getId, employeeIds)
                 .eq(SysEmployee::getEmployStatus, 1)
                 .eq(SysEmployee::getStatus, 0)
                 .and(w -> w.like(SysEmployee::getPosition, "医生")
@@ -222,10 +228,13 @@ public class BizBasicDataServiceImpl implements IBizBasicDataService {
                         SysEmployee::getPosition, SysEmployee::getClinicId));
     }
 
+    /**
+     * 解析诊所：请求入参优先，否则使用登录后选定的当前诊所
+     *
+     * @param clinicId 请求诊所ID
+     * @return 最终诊所ID
+     */
     private Long resolveClinicId(Long clinicId) {
-        if (clinicId != null) {
-            return clinicId;
-        }
-        return SecurityContextHolder.getClinicId();
+        return SecurityContextHolder.requireClinicId(clinicId);
     }
 }

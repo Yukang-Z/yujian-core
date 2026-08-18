@@ -13,17 +13,16 @@ import com.yujian.common.system.domain.SysEmployee;
 public interface ISysEmployeeService extends IService<SysEmployee> {
 
     /**
-     * 员工分页列表（含诊所/部门名称、角色名与 roleIds）
+     * 员工分页列表（含诊所名称、角色名与 roleIds）
      *
      * @param keyword      姓名/手机/工号关键字
      * @param clinicId     诊所ID
-     * @param deptId       部门ID
      * @param employStatus 在职状态
      * @param pageNum      页码
      * @param pageSize     每页条数
      * @return 分页结果
      */
-    PageResult<SysEmployee> selectEmployeePage(String keyword, Long clinicId, Long deptId,
+    PageResult<SysEmployee> selectEmployeePage(String keyword, Long clinicId,
                                                Integer employStatus, long pageNum, long pageSize);
 
     /**

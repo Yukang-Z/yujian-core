@@ -48,7 +48,7 @@ public class BizSchedule extends BaseEntity {
     /** 日历展示颜色 */
     private String color;
 
-    /** 日程状态 */
+    /** 日程状态：0正常 1取消 */
     private Integer status;
 
     /** 医生/员工姓名（非表字段） */

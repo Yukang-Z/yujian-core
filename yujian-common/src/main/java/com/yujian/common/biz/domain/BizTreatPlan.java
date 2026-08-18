@@ -43,6 +43,6 @@ public class BizTreatPlan extends BaseEntity {
     /** 预估金额 */
     private BigDecimal estimateAmount;
 
-    /** 计划状态 */
+    /** 计划状态：0草稿 1已确认 2执行中 3已完成 4已取消 */
     private Integer planStatus;
 }

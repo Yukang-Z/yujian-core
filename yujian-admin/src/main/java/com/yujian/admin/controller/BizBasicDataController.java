@@ -7,14 +7,27 @@ import com.yujian.common.biz.domain.BizPatientSource;
 import com.yujian.common.biz.domain.BizPatientTag;
 import com.yujian.common.biz.domain.BizTreatItem;
 import com.yujian.common.core.domain.R;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
 /**
- * 基础数据管理
+ * 基础数据接口（字典、标签、来源、项目、医生列）
+ *
+ * @author Zhangyk
+ * @date 2026-08-14 16:50
  */
+@Api(tags = "基础数据")
 @RestController
 @RequestMapping("/biz/basic")
 public class BizBasicDataController {
@@ -22,83 +35,172 @@ public class BizBasicDataController {
     @Autowired
     private IBizBasicDataService basicDataService;
 
-    // ---------- 字典 ----------
-
+    /**
+     * 字典类型列表
+     *
+     * @return 字典类型
+     */
+    @ApiOperation("字典类型列表")
     @GetMapping("/dict/types")
     public R<List<BizDictType>> dictTypes() {
         return R.ok(basicDataService.selectDictTypeList());
     }
 
+    /**
+     * 按类型查询字典数据
+     *
+     * @param dictType 类型编码，如 appoint_status
+     * @return 字典项
+     */
+    @ApiOperation("字典数据")
     @GetMapping("/dict/{dictType}")
-    public R<List<BizDictData>> dictData(@PathVariable String dictType) {
+    public R<List<BizDictData>> dictData(
+            @ApiParam(value = "字典类型编码", required = true) @PathVariable String dictType) {
         return R.ok(basicDataService.selectDictByType(dictType));
     }
 
+    /**
+     * 新增或修改字典项
+     *
+     * @param data 字典项
+     * @return 操作结果
+     */
+    @ApiOperation("保存字典数据")
     @PostMapping("/dict/data")
     public R<?> saveDictData(@RequestBody BizDictData data) {
         return basicDataService.saveDictData(data) > 0 ? R.ok() : R.fail();
     }
 
-    @DeleteMapping("/dict/data/{id}")
-    public R<?> removeDictData(@PathVariable Long id) {
+    /**
+     * 删除字典项
+     *
+     * @param id 字典项ID
+     * @return 操作结果
+     */
+    @ApiOperation("删除字典数据")
+    @PostMapping("/dict/data/remove/{id}")
+    public R<?> removeDictData(@ApiParam(value = "字典项ID", required = true) @PathVariable Long id) {
         return basicDataService.deleteDictData(id) > 0 ? R.ok() : R.fail();
     }
 
-    // ---------- 患者标签 ----------
-
+    /**
+     * 当前诊所患者标签
+     *
+     * @param clinicId 忽略
+     * @return 标签列表
+     */
+    @ApiOperation("患者标签列表")
     @GetMapping("/tag/list")
-    public R<List<BizPatientTag>> tagList(@RequestParam(required = false) Long clinicId) {
+    public R<List<BizPatientTag>> tagList(@ApiParam("诊所ID（忽略）") @RequestParam(required = false) Long clinicId) {
         return R.ok(basicDataService.selectTagList(clinicId));
     }
 
+    /**
+     * 保存患者标签
+     *
+     * @param tag 标签
+     * @return 操作结果
+     */
+    @ApiOperation("保存患者标签")
     @PostMapping("/tag")
     public R<?> saveTag(@RequestBody BizPatientTag tag) {
         return basicDataService.saveTag(tag) > 0 ? R.ok() : R.fail();
     }
 
-    @DeleteMapping("/tag/{id}")
-    public R<?> removeTag(@PathVariable Long id) {
+    /**
+     * 删除患者标签
+     *
+     * @param id 标签ID
+     * @return 操作结果
+     */
+    @ApiOperation("删除患者标签")
+    @PostMapping("/tag/remove/{id}")
+    public R<?> removeTag(@ApiParam(value = "标签ID", required = true) @PathVariable Long id) {
         return basicDataService.deleteTag(id) > 0 ? R.ok() : R.fail();
     }
 
-    // ---------- 患者来源 ----------
-
+    /**
+     * 患者来源树
+     *
+     * @param clinicId 忽略
+     * @return 来源树
+     */
+    @ApiOperation("患者来源树")
     @GetMapping("/source/tree")
-    public R<List<BizPatientSource>> sourceTree(@RequestParam(required = false) Long clinicId) {
+    public R<List<BizPatientSource>> sourceTree(
+            @ApiParam("诊所ID（忽略）") @RequestParam(required = false) Long clinicId) {
         return R.ok(basicDataService.selectSourceTree(clinicId));
     }
 
+    /**
+     * 保存患者来源
+     *
+     * @param source 来源
+     * @return 操作结果
+     */
+    @ApiOperation("保存患者来源")
     @PostMapping("/source")
     public R<?> saveSource(@RequestBody BizPatientSource source) {
         return basicDataService.saveSource(source) > 0 ? R.ok() : R.fail();
     }
 
-    @DeleteMapping("/source/{id}")
-    public R<?> removeSource(@PathVariable Long id) {
+    /**
+     * 删除患者来源
+     *
+     * @param id 来源ID
+     * @return 操作结果
+     */
+    @ApiOperation("删除患者来源")
+    @PostMapping("/source/remove/{id}")
+    public R<?> removeSource(@ApiParam(value = "来源ID", required = true) @PathVariable Long id) {
         return basicDataService.deleteSource(id) > 0 ? R.ok() : R.fail();
     }
 
-    // ---------- 诊疗项目 ----------
-
+    /**
+     * 诊疗项目列表
+     *
+     * @param clinicId 忽略
+     * @return 项目列表
+     */
+    @ApiOperation("诊疗项目列表")
     @GetMapping("/item/list")
-    public R<List<BizTreatItem>> itemList(@RequestParam(required = false) Long clinicId) {
+    public R<List<BizTreatItem>> itemList(@ApiParam("诊所ID（忽略）") @RequestParam(required = false) Long clinicId) {
         return R.ok(basicDataService.selectTreatItemList(clinicId));
     }
 
+    /**
+     * 保存诊疗项目
+     *
+     * @param item 项目
+     * @return 操作结果
+     */
+    @ApiOperation("保存诊疗项目")
     @PostMapping("/item")
     public R<?> saveItem(@RequestBody BizTreatItem item) {
         return basicDataService.saveTreatItem(item) > 0 ? R.ok() : R.fail();
     }
 
-    @DeleteMapping("/item/{id}")
-    public R<?> removeItem(@PathVariable Long id) {
+    /**
+     * 删除诊疗项目
+     *
+     * @param id 项目ID
+     * @return 操作结果
+     */
+    @ApiOperation("删除诊疗项目")
+    @PostMapping("/item/remove/{id}")
+    public R<?> removeItem(@ApiParam(value = "项目ID", required = true) @PathVariable Long id) {
         return basicDataService.deleteTreatItem(id) > 0 ? R.ok() : R.fail();
     }
 
-    // ---------- 医生列表（日历列） ----------
-
+    /**
+     * 当前诊所医生列表（日历列）
+     *
+     * @param clinicId 忽略
+     * @return 医生列表
+     */
+    @ApiOperation("医生列表")
     @GetMapping("/doctor/list")
-    public R<List<?>> doctorList(@RequestParam(required = false) Long clinicId) {
+    public R<List<?>> doctorList(@ApiParam("诊所ID（忽略）") @RequestParam(required = false) Long clinicId) {
         return R.ok(basicDataService.selectDoctorList(clinicId));
     }
 }

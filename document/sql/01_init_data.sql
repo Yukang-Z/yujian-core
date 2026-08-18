@@ -69,12 +69,15 @@ INSERT INTO `t_role_menu` (`role_id`, `menu_id`)
 SELECT 1, id FROM `t_menu` WHERE is_delete = 0;
 
 -- 管理员账号（密码：123456，BCrypt）
-INSERT INTO `t_employee` (`id`, `name`, `emp_no`, `username`, `password`, `gender`, `mobile`, `clinic_id`, `dept_id`, `position`, `employ_status`, `mobile_link`, `id_type`, `sort_order`, `status`)
+INSERT INTO `t_employee` (`id`, `name`, `emp_no`, `username`, `password`, `gender`, `mobile`, `clinic_id`, `position`, `employ_status`, `id_type`, `sort_order`, `status`)
 VALUES (1, '管理员', '001', 'admin',
         '$2a$10$9azfvb1/7NDfZvexAcRdmOzC7sqySzyYDvP3u350XB5zmqzDCUak2',
-        1, '13800000000', 1, 1, '医生', 1, 1, '身份证', 1, 0);
+        1, '13800000000', 1, '医生', 1, '身份证', 1, 0);
 
 INSERT INTO `t_employee_role` (`employee_id`, `role_id`) VALUES (1, 1);
+
+-- 管理员关联诊所（可多诊所；初始化关联总部）
+INSERT INTO `t_employee_clinic` (`employee_id`, `clinic_id`) VALUES (1, 1);
 
 -- ----------------------------
 -- 字典类型 / 字典数据

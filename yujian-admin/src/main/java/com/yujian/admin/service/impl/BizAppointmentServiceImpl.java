@@ -47,6 +47,9 @@ public class BizAppointmentServiceImpl extends ServiceImpl<BizAppointmentMapper,
     @Autowired
     private SysEmployeeMapper employeeMapper;
 
+    @Autowired
+    private com.yujian.admin.mapper.SysEmployeeClinicMapper employeeClinicMapper;
+
     @Override
     public PageResult<BizAppointment> selectPage(String keyword, Long clinicId, Long doctorId, Long consultantId,
                                                  Integer visitType, Integer status, String appointSource,
@@ -75,13 +78,17 @@ public class BizAppointmentServiceImpl extends ServiceImpl<BizAppointmentMapper,
         Date end = cal.getTime();
 
         List<BizAppointment> list = baseMapper.selectCalendarList(clinicId, begin, end, null, statusList);
-        List<SysEmployee> doctors = employeeMapper.selectList(new LambdaQueryWrapper<SysEmployee>()
-                .eq(SysEmployee::getClinicId, clinicId)
-                .eq(SysEmployee::getEmployStatus, 1)
-                .eq(SysEmployee::getStatus, 0)
-                .and(w -> w.like(SysEmployee::getPosition, "医生")
-                        .or().like(SysEmployee::getPosition, "医师"))
-                .orderByAsc(SysEmployee::getSortOrder));
+        List<Long> employeeIds = employeeClinicMapper.selectEmployeeIdsByClinicId(clinicId);
+        List<SysEmployee> doctors = new ArrayList<SysEmployee>();
+        if (employeeIds != null && !employeeIds.isEmpty()) {
+            doctors = employeeMapper.selectList(new LambdaQueryWrapper<SysEmployee>()
+                    .in(SysEmployee::getId, employeeIds)
+                    .eq(SysEmployee::getEmployStatus, 1)
+                    .eq(SysEmployee::getStatus, 0)
+                    .and(w -> w.like(SysEmployee::getPosition, "医生")
+                            .or().like(SysEmployee::getPosition, "医师"))
+                    .orderByAsc(SysEmployee::getSortOrder));
+        }
 
         Map<Long, List<BizAppointment>> doctorMap = new LinkedHashMap<Long, List<BizAppointment>>();
         doctorMap.put(0L, new ArrayList<BizAppointment>());
@@ -367,6 +374,10 @@ public class BizAppointmentServiceImpl extends ServiceImpl<BizAppointmentMapper,
         if (patient == null) {
             throw new BusinessException("患者不存在");
         }
+        Long clinicId = SecurityContextHolder.requireClinicId();
+        if (patient.getClinicId() != null && !clinicId.equals(patient.getClinicId())) {
+            throw new BusinessException("患者不属于当前诊所");
+        }
     }
 
     private void fillItemName(BizAppointment appointment) {
@@ -428,7 +439,7 @@ public class BizAppointmentServiceImpl extends ServiceImpl<BizAppointmentMapper,
     }
 
     private Long resolveClinicId(Long clinicId) {
-        return clinicId != null ? clinicId : SecurityContextHolder.getClinicId();
+        return SecurityContextHolder.requireClinicId(clinicId);
     }
 
     private void clearTime(Calendar cal) {

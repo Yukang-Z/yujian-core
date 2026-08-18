@@ -12,6 +12,7 @@ USE `yujian`;
 -- 关联 / 日志表先删（无依赖顺序）
 -- ----------------------------
 DROP TABLE IF EXISTS `t_employee_role`;
+DROP TABLE IF EXISTS `t_employee_clinic`;
 DROP TABLE IF EXISTS `t_role_menu`;
 DROP TABLE IF EXISTS `t_patient_tag_rel`;
 DROP TABLE IF EXISTS `t_appointment_log`;
@@ -106,11 +107,9 @@ CREATE TABLE `t_employee` (
   `birthday`        DATE         DEFAULT NULL COMMENT '生日',
   `mobile`          VARCHAR(20)  DEFAULT NULL COMMENT '手机号码',
   `email`           VARCHAR(100) DEFAULT NULL COMMENT '邮箱',
-  `clinic_id`       BIGINT(20)   DEFAULT NULL COMMENT '工作诊所ID',
-  `dept_id`         BIGINT(20)   DEFAULT NULL COMMENT '所属部门ID',
+  `clinic_id`       BIGINT(20)   DEFAULT NULL COMMENT '默认/主诊所ID（冗余，关联以 t_employee_clinic 为准）',
   `position`        VARCHAR(50)  DEFAULT NULL COMMENT '岗位',
   `employ_status`   TINYINT(4)   DEFAULT 1 COMMENT '在职状态（1在职 0离职）',
-  `mobile_link`     TINYINT(4)   DEFAULT 0 COMMENT '手机关联（1允许 0不允许）',
   `id_type`         VARCHAR(30)  DEFAULT NULL COMMENT '证件类型',
   `id_number`       VARCHAR(50)  DEFAULT NULL COMMENT '证件号码',
   `avatar`          VARCHAR(255) DEFAULT NULL COMMENT '头像',
@@ -189,6 +188,19 @@ CREATE TABLE `t_employee_role` (
   KEY `idx_employee_id` (`employee_id`),
   KEY `idx_role_id` (`role_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='员工角色关联表';
+
+-- ----------------------------
+-- 6.1 员工诊所关联表（一对多）
+-- ----------------------------
+CREATE TABLE `t_employee_clinic` (
+  `id`              BIGINT(20) NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `employee_id`     BIGINT(20) NOT NULL COMMENT '员工ID',
+  `clinic_id`       BIGINT(20) NOT NULL COMMENT '诊所ID',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_employee_clinic` (`employee_id`, `clinic_id`),
+  KEY `idx_employee_id` (`employee_id`),
+  KEY `idx_clinic_id` (`clinic_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='员工诊所关联表';
 
 -- ----------------------------
 -- 7. 角色菜单关联表

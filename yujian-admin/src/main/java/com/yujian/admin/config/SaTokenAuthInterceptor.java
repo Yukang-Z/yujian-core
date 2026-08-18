@@ -53,15 +53,41 @@ public class SaTokenAuthInterceptor implements HandlerInterceptor {
                 LoginUser loginUser = (LoginUser) cached;
                 loginUser.setToken(StpUtil.getTokenValue());
                 SecurityContextHolder.setLoginUser(loginUser);
+                // 患者/预约/员工等业务接口必须先选定诊所
+                if (needSelectedClinic(request) && loginUser.getClinicId() == null) {
+                    log.info("【鉴权】未选择诊所, path={}", request.getRequestURI());
+                    writeJson(response, 400, "请先选择诊所后再操作");
+                    return false;
+                }
             } else {
                 log.warn("【鉴权】已登录但 Session 缺少 LoginUser, loginId={}", StpUtil.getLoginIdDefaultNull());
             }
             return true;
         } catch (NotLoginException e) {
             log.info("【鉴权】未登录或 Token 失效, path={}, type={}", request.getRequestURI(), e.getType());
-            writeUnauthorized(response, "未登录或登录已过期，请重新登录");
+            writeJson(response, 401, "未登录或登录已过期，请重新登录");
             return false;
         }
+    }
+
+    /**
+     * 患者、预约、员工、部门等业务查询必须带当前诊所
+     *
+     * @param request 请求
+     * @return true=需要已选诊所
+     */
+    private boolean needSelectedClinic(HttpServletRequest request) {
+        String uri = request.getRequestURI();
+        if (uri == null) {
+            return false;
+        }
+        String context = request.getContextPath();
+        if (context != null && !context.isEmpty() && uri.startsWith(context)) {
+            uri = uri.substring(context.length());
+        }
+        return uri.startsWith("/biz/")
+                || uri.startsWith("/system/employee")
+                || uri.startsWith("/system/dept");
     }
 
     /**
@@ -79,16 +105,17 @@ public class SaTokenAuthInterceptor implements HandlerInterceptor {
     }
 
     /**
-     * 输出 401 JSON
+     * 输出鉴权/诊所校验失败 JSON
      *
      * @param response 响应
+     * @param code     业务码
      * @param msg      提示信息
      * @throws IOException IO 异常
      */
-    private void writeUnauthorized(HttpServletResponse response, String msg) throws IOException {
-        response.setStatus(401);
+    private void writeJson(HttpServletResponse response, int code, String msg) throws IOException {
+        response.setStatus(code == 401 ? 401 : 200);
         response.setCharacterEncoding("UTF-8");
         response.setContentType("application/json;charset=UTF-8");
-        response.getWriter().write(JSON.toJSONString(R.fail(401, msg)));
+        response.getWriter().write(JSON.toJSONString(R.fail(code, msg)));
     }
 }

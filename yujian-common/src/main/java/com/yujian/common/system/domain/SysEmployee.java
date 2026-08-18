@@ -56,20 +56,14 @@ public class SysEmployee extends BaseEntity {
     /** 邮箱 */
     private String email;
 
-    /** 工作诊所ID，关联 t_clinic.id */
+    /** 默认/主诊所ID（冗余字段；关联诊所以 clinicIds / t_employee_clinic 为准） */
     private Long clinicId;
-
-    /** 所属部门ID，关联 t_dept.id */
-    private Long deptId;
 
     /** 岗位名称 */
     private String position;
 
     /** 在职状态：1在职 0离职 */
     private Integer employStatus;
-
-    /** 手机关联：1允许登录移动端 0不允许 */
-    private Integer mobileLink;
 
     /** 证件类型，如身份证 */
     private String idType;
@@ -98,15 +92,19 @@ public class SysEmployee extends BaseEntity {
     @TableField(exist = false)
     private String clinicName;
 
-    /** 部门名称（非表字段，列表联查） */
-    @TableField(exist = false)
-    private String deptName;
-
     /** 角色ID列表（非表字段；列表/详情返回；更新时 null=不改，非 null=全量同步） */
     @TableField(exist = false)
     private List<Long> roleIds;
 
+    /** 关联诊所ID列表（非表字段；一对多；更新时 null=不改，非 null=全量同步） */
+    @TableField(exist = false)
+    private List<Long> clinicIds;
+
     /** 角色名称，逗号分隔（非表字段） */
     @TableField(exist = false)
     private String roleNames;
+
+    /** 关联诊所名称，逗号分隔（非表字段） */
+    @TableField(exist = false)
+    private String clinicNames;
 }

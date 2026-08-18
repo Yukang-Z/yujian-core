@@ -83,7 +83,7 @@ mvn clean install -DskipTests
 |------|------|
 | `t_clinic` | 诊所管理（支持总分院 parent_id） |
 | `t_dept` | 部门 |
-| `t_employee` | 员工（工号、岗位、在职状态、手机关联等） |
+| `t_employee` | 员工（工号、岗位、在职状态等） |
 | `t_role` | 角色（含数据权限 data_scope） |
 | `t_menu` | 菜单/权限树（web / mobile） |
 | `t_employee_role` | 员工-角色 |
@@ -92,10 +92,14 @@ mvn clean install -DskipTests
 ### 5.2 登录拦截
 
 - Sa-Token + Redis 会话；Header：`Authorization: Bearer {token}`
-- 白名单：`/auth/login`、Knife4j、Actuator
-- 当前用户：`SecurityContextHolder.getLoginUser()`（由 Sa-Token Session 同步）
+- 白名单：`POST /auth/login`、Knife4j、Actuator
+- 登录后若关联多个诊所，需 `POST /auth/selectClinic` 选定诊所
+- 患者 / 预约 / 员工 / 部门接口按当前诊所隔离
+- 接口仅使用 **GET / POST**（修改走 `/edit`，删除走 `/remove/{id}`）
 
 登录：`POST /auth/login`  
+选诊所：`POST /auth/selectClinic` `{ "clinicId": 1 }`  
+可选诊所：`GET /auth/clinics`  
 当前用户：`GET /auth/info`  
 退出：`POST /auth/logout`
 
@@ -109,31 +113,31 @@ mvn clean install -DskipTests
 | GET | `/tree` | 诊所树数据 |
 | GET | `/{id}` | 详情 |
 | POST | `/` | 新增 |
-| PUT | `/` | 修改 |
-| DELETE | `/{id}` | 删除 |
+| POST | `/edit` | 修改 |
+| POST | `/remove/{id}` | 删除 |
 
 #### 部门管理 `/system/dept`
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
-| GET | `/list` | 部门列表 |
+| GET | `/list` | 部门列表（当前诊所） |
 | GET | `/{id}` | 详情 |
 | POST | `/` | 新增 |
-| PUT | `/` | 修改 |
-| DELETE | `/{id}` | 删除 |
+| POST | `/edit` | 修改 |
+| POST | `/remove/{id}` | 删除 |
 
 #### 员工管理 `/system/employee`
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
-| GET | `/list` | 分页列表（含 roleIds） |
-| GET | `/{id}` | 详情（含 roleIds） |
-| POST | `/` | 新增（含角色绑定） |
-| PUT | `/` | 修改（roleIds 为 null 不改角色；密码勿传） |
-| PUT | `/status` | 仅启停 `{ id, status }` |
-| DELETE | `/{id}` | 删除 |
-| PUT | `/resetPwd` | 重置密码 |
-| PUT | `/sort/{id}/{direction}` | 上移/下移（up/down） |
+| GET | `/list` | 当前诊所员工分页（含 roleIds、clinicIds） |
+| GET | `/{id}` | 详情 |
+| POST | `/` | 新增（`clinicIds` 一对多，空则绑当前诊所） |
+| POST | `/edit` | 修改（roleIds/clinicIds 为 null 不改） |
+| POST | `/status` | 仅启停 `{ id, status }` |
+| POST | `/remove/{id}` | 删除 |
+| POST | `/resetPwd` | 重置密码 |
+| POST | `/sort/{id}/{direction}` | 上移/下移 |
 
 #### 角色设置 `/system/role`
 
@@ -142,11 +146,11 @@ mvn clean install -DskipTests
 | GET | `/list` | 角色列表 |
 | GET | `/{id}` | 详情（含 menuIds） |
 | POST | `/` | 新增 |
-| PUT | `/` | 修改 |
-| DELETE | `/{id}` | 删除 |
-| PUT | `/auth` | 保存角色菜单权限 |
+| POST | `/edit` | 修改 |
+| POST | `/remove/{id}` | 删除 |
+| POST | `/auth` | 保存角色菜单权限 |
 | GET | `/{id}/menus` | 角色已选菜单 |
-| PUT | `/move/{id}/{direction}` | 上移/下移 |
+| POST | `/move/{id}/{direction}` | 上移/下移 |
 
 #### 权限管理 `/system/menu`
 
@@ -156,8 +160,8 @@ mvn clean install -DskipTests
 | GET | `/tree?platform=web` | 权限树（web/mobile） |
 | GET | `/{id}` | 详情 |
 | POST | `/` | 新增 |
-| PUT | `/` | 修改 |
-| DELETE | `/{id}` | 删除 |
+| POST | `/edit` | 修改 |
+| POST | `/remove/{id}` | 删除 |
 | GET | `/employee/{id}` | 员工菜单树 |
 | GET | `/employee/{id}/perms` | 员工权限标识 |
 

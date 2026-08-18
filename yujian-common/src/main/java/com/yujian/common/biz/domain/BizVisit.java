@@ -48,7 +48,7 @@ public class BizVisit extends BaseEntity {
     /** 就诊类型：1初诊 2复诊 */
     private Integer visitType;
 
-    /** 就诊状态 */
+    /** 就诊状态：1待分诊 2咨询中 3治疗中 4待结算 5已完成 6已离开 */
     private Integer visitStatus;
 
     /** 诊疗项目名称 */

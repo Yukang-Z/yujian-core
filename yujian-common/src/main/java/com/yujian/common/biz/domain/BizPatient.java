@@ -26,6 +26,7 @@ public class BizPatient extends BaseEntity {
 
     private static final long serialVersionUID = 1L;
 
+    /** 患者ID */
     @TableId(type = IdType.AUTO)
     private Long id;
 
@@ -75,10 +76,16 @@ public class BizPatient extends BaseEntity {
     /** 医保余额 */
     private BigDecimal medicareBalance;
 
-    /** 省市区 */
+    /** 省 */
     private String province;
+
+    /** 市 */
     private String city;
+
+    /** 区 */
     private String district;
+
+    /** 详细地址 */
     private String address;
 
     /** 居住区域 */
@@ -150,24 +157,31 @@ public class BizPatient extends BaseEntity {
     /** 状态 0正常 1归档 */
     private Integer status;
 
+    /** 主治医生姓名（非表字段） */
     @TableField(exist = false)
     private String doctorName;
 
+    /** 初诊医生姓名（非表字段） */
     @TableField(exist = false)
     private String firstDoctorName;
 
+    /** 最近就诊医生姓名（非表字段） */
     @TableField(exist = false)
     private String lastDoctorName;
 
+    /** 患者来源名称（非表字段） */
     @TableField(exist = false)
     private String sourceName;
 
+    /** 标签ID列表（非表字段，保存时写入关联表） */
     @TableField(exist = false)
     private List<Long> tagIds;
 
+    /** 标签名称，逗号分隔（非表字段） */
     @TableField(exist = false)
     private String tagNames;
 
+    /** 诊疗项目ID列表（非表字段） */
     @TableField(exist = false)
     private List<Long> itemIds;
 }

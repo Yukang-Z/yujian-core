@@ -3,13 +3,16 @@ package com.yujian.admin.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.yujian.admin.mapper.SysEmployeeClinicMapper;
 import com.yujian.admin.mapper.SysEmployeeMapper;
 import com.yujian.admin.mapper.SysEmployeeRoleMapper;
 import com.yujian.admin.service.ISysEmployeeService;
 import com.yujian.common.constant.Constants;
+import com.yujian.common.core.context.SecurityContextHolder;
 import com.yujian.common.core.domain.PageResult;
 import com.yujian.common.exception.BusinessException;
 import com.yujian.common.system.domain.SysEmployee;
+import com.yujian.common.system.domain.SysEmployeeClinic;
 import com.yujian.common.system.domain.SysEmployeeRole;
 import com.yujian.common.utils.SecurityUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -44,25 +47,30 @@ public class SysEmployeeServiceImpl extends ServiceImpl<SysEmployeeMapper, SysEm
     @Autowired
     private SysEmployeeRoleMapper employeeRoleMapper;
 
+    @Autowired
+    private SysEmployeeClinicMapper employeeClinicMapper;
+
     /**
      * 员工分页列表，并批量回填 roleIds
      *
      * @param keyword      关键字
      * @param clinicId     诊所ID
-     * @param deptId       部门ID
      * @param employStatus 在职状态
      * @param pageNum      页码
      * @param pageSize     每页条数
      * @return 分页结果
      */
     @Override
-    public PageResult<SysEmployee> selectEmployeePage(String keyword, Long clinicId, Long deptId,
+    public PageResult<SysEmployee> selectEmployeePage(String keyword, Long clinicId,
                                                       Integer employStatus, long pageNum, long pageSize) {
+        // 默认按当前登录所选诊所过滤；员工通过关联表一对多归属诊所
+        clinicId = SecurityContextHolder.requireClinicId(clinicId);
+        log.info("【员工】分页查询, clinicId={}, keyword={}", clinicId, keyword);
         Page<SysEmployee> page = new Page<SysEmployee>(pageNum, pageSize);
         PageResult<SysEmployee> result = PageResult.of(
-                baseMapper.selectEmployeePage(page, keyword, clinicId, deptId, employStatus));
-        // 列表一并带回 roleIds，避免前端停用/编辑前再打详情
+                baseMapper.selectEmployeePage(page, keyword, clinicId, employStatus));
         fillRoleIds(result.getRecords());
+        fillClinicIds(result.getRecords());
         return result;
     }
 
@@ -77,6 +85,7 @@ public class SysEmployeeServiceImpl extends ServiceImpl<SysEmployeeMapper, SysEm
         SysEmployee employee = this.getById(id);
         if (employee != null) {
             employee.setRoleIds(employeeRoleMapper.selectRoleIdsByEmployeeId(id));
+            employee.setClinicIds(employeeClinicMapper.selectClinicIdsByEmployeeId(id));
             employee.setPassword(null);
         }
         return employee;
@@ -109,16 +118,24 @@ public class SysEmployeeServiceImpl extends ServiceImpl<SysEmployeeMapper, SysEm
         if (employee.getStatus() == null) {
             employee.setStatus(STATUS_NORMAL);
         }
-        if (employee.getMobileLink() == null) {
-            employee.setMobileLink(0);
-        }
         if (employee.getSortOrder() == null) {
             employee.setSortOrder(0);
         }
+        // 未传关联诊所时，默认绑定当前所选诊所
+        if (employee.getClinicIds() == null || employee.getClinicIds().isEmpty()) {
+            Long currentClinicId = SecurityContextHolder.requireClinicId(employee.getClinicId());
+            List<Long> defaultClinics = new ArrayList<Long>();
+            defaultClinics.add(currentClinicId);
+            employee.setClinicIds(defaultClinics);
+        }
+        employee.setClinicId(employee.getClinicIds().get(0));
         boolean saved = this.save(employee);
         insertEmployeeRole(employee);
-        log.info("【员工】新增完成, employeeId={}, roleCount={}",
-                employee.getId(), employee.getRoleIds() == null ? 0 : employee.getRoleIds().size());
+        insertEmployeeClinic(employee);
+        log.info("【员工】新增完成, employeeId={}, roleCount={}, clinicCount={}",
+                employee.getId(),
+                employee.getRoleIds() == null ? 0 : employee.getRoleIds().size(),
+                employee.getClinicIds().size());
         return saved ? 1 : 0;
     }
 
@@ -144,6 +161,9 @@ public class SysEmployeeServiceImpl extends ServiceImpl<SysEmployeeMapper, SysEm
         }
         // 改密码请走 resetPwd，避免误覆盖密文
         employee.setPassword(null);
+        if (employee.getClinicIds() != null && !employee.getClinicIds().isEmpty()) {
+            employee.setClinicId(employee.getClinicIds().get(0));
+        }
         boolean updated = this.updateById(employee);
         // null：保留原角色；非 null：先删后插（空列表表示清空角色）
         if (employee.getRoleIds() != null) {
@@ -153,6 +173,18 @@ public class SysEmployeeServiceImpl extends ServiceImpl<SysEmployeeMapper, SysEm
                     employee.getId(), employee.getRoleIds().size());
         } else {
             log.info("【员工】未传 roleIds，跳过角色同步, employeeId={}", employee.getId());
+        }
+        // null：保留原诊所关联；非 null：全量同步
+        if (employee.getClinicIds() != null) {
+            if (employee.getClinicIds().isEmpty()) {
+                throw new BusinessException("员工至少关联一个诊所");
+            }
+            employeeClinicMapper.deleteByEmployeeId(employee.getId());
+            insertEmployeeClinic(employee);
+            log.info("【员工】诊所已同步, employeeId={}, clinicCount={}",
+                    employee.getId(), employee.getClinicIds().size());
+        } else {
+            log.info("【员工】未传 clinicIds，跳过诊所同步, employeeId={}", employee.getId());
         }
         return updated ? 1 : 0;
     }
@@ -175,6 +207,58 @@ public class SysEmployeeServiceImpl extends ServiceImpl<SysEmployeeMapper, SysEm
         }
     }
 
+    /**
+     * 写入员工-诊所关联
+     *
+     * @param employee 含 id、clinicIds
+     */
+    private void insertEmployeeClinic(SysEmployee employee) {
+        List<Long> clinicIds = employee.getClinicIds();
+        if (clinicIds == null || clinicIds.isEmpty()) {
+            return;
+        }
+        for (Long clinicId : clinicIds) {
+            SysEmployeeClinic rel = new SysEmployeeClinic();
+            rel.setEmployeeId(employee.getId());
+            rel.setClinicId(clinicId);
+            employeeClinicMapper.insert(rel);
+        }
+    }
+
+    /**
+     * 批量为列表记录回填 clinicIds
+     *
+     * @param employees 员工列表
+     */
+    private void fillClinicIds(List<SysEmployee> employees) {
+        if (employees == null || employees.isEmpty()) {
+            return;
+        }
+        List<Long> employeeIds = new ArrayList<Long>(employees.size());
+        for (SysEmployee employee : employees) {
+            employeeIds.add(employee.getId());
+            employee.setClinicIds(new ArrayList<Long>());
+        }
+        List<SysEmployeeClinic> relations = employeeClinicMapper.selectByEmployeeIds(employeeIds);
+        if (relations == null || relations.isEmpty()) {
+            return;
+        }
+        Map<Long, List<Long>> clinicMap = new HashMap<Long, List<Long>>(employees.size());
+        for (SysEmployeeClinic relation : relations) {
+            List<Long> ids = clinicMap.get(relation.getEmployeeId());
+            if (ids == null) {
+                ids = new ArrayList<Long>();
+                clinicMap.put(relation.getEmployeeId(), ids);
+            }
+            ids.add(relation.getClinicId());
+        }
+        for (SysEmployee employee : employees) {
+            List<Long> clinicIds = clinicMap.get(employee.getId());
+            if (clinicIds != null) {
+                employee.setClinicIds(clinicIds);
+            }
+        }
+    }
     /**
      * 批量为列表记录回填 roleIds
      *
@@ -221,6 +305,7 @@ public class SysEmployeeServiceImpl extends ServiceImpl<SysEmployeeMapper, SysEm
     public int deleteEmployeeById(Long id) {
         log.info("【员工】删除, employeeId={}", id);
         employeeRoleMapper.deleteByEmployeeId(id);
+        employeeClinicMapper.deleteByEmployeeId(id);
         return this.removeById(id) ? 1 : 0;
     }
 

@@ -39,9 +39,7 @@ public class BizPatientServiceImpl extends ServiceImpl<BizPatientMapper, BizPati
     @Override
     public PageResult<BizPatient> selectPage(String keyword, Long clinicId, Long doctorId,
                                              Long firstDoctorId, Long tagId, long pageNum, long pageSize) {
-        if (clinicId == null) {
-            clinicId = SecurityContextHolder.getClinicId();
-        }
+        clinicId = SecurityContextHolder.requireClinicId(clinicId);
         Page<BizPatient> page = new Page<BizPatient>(pageNum, pageSize);
         return PageResult.of(baseMapper.selectPatientPage(page, clinicId, keyword, doctorId, firstDoctorId, tagId));
     }
@@ -49,21 +47,22 @@ public class BizPatientServiceImpl extends ServiceImpl<BizPatientMapper, BizPati
     @Override
     public BizPatient selectById(Long id) {
         BizPatient patient = this.getById(id);
-        if (patient != null) {
-            patient.setTagIds(tagRelMapper.selectTagIdsByPatientId(id));
+        if (patient == null) {
+            return null;
         }
+        Long clinicId = SecurityContextHolder.requireClinicId();
+        if (patient.getClinicId() != null && !clinicId.equals(patient.getClinicId())) {
+            throw new BusinessException("患者不属于当前诊所");
+        }
+        patient.setTagIds(tagRelMapper.selectTagIdsByPatientId(id));
         return patient;
     }
 
     @Override
     public List<BizPatient> search(String keyword, Long clinicId, int limit) {
-        if (clinicId == null) {
-            clinicId = SecurityContextHolder.getClinicId();
-        }
+        clinicId = SecurityContextHolder.requireClinicId(clinicId);
         LambdaQueryWrapper<BizPatient> wrapper = new LambdaQueryWrapper<BizPatient>();
-        if (clinicId != null) {
-            wrapper.eq(BizPatient::getClinicId, clinicId);
-        }
+        wrapper.eq(BizPatient::getClinicId, clinicId);
         if (StringUtils.isNotBlank(keyword)) {
             wrapper.and(w -> w.like(BizPatient::getName, keyword)
                     .or().like(BizPatient::getMobile, keyword)
@@ -154,12 +153,8 @@ public class BizPatientServiceImpl extends ServiceImpl<BizPatientMapper, BizPati
         if (StringUtils.isBlank(patient.getMobile())) {
             throw new BusinessException("手机号不能为空");
         }
-        if (patient.getClinicId() == null) {
-            patient.setClinicId(SecurityContextHolder.getClinicId());
-        }
-        if (patient.getClinicId() == null) {
-            throw new BusinessException("诊所ID不能为空");
-        }
+        // 新增患者强制归属当前所选诊所
+        patient.setClinicId(SecurityContextHolder.requireClinicId());
         if (StringUtils.isBlank(patient.getMedicalRecordNo())) {
             patient.setMedicalRecordNo(generateMedicalRecordNo(patient.getClinicId()));
         } else {

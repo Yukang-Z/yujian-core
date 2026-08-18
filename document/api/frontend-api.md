@@ -1,7 +1,7 @@
 # 宇健口腔 · 前端联调接口说明
 
 > 模块：`yujian-admin`（Web 管理端）  
-> 用途：地址、鉴权、传参、响应结构一览，供前端联调使用。  
+> 用途：地址、鉴权、传参、响应结构一览。  
 > 在线文档（启动 admin 后）：http://localhost:8081/doc.html  
 
 ---
@@ -13,14 +13,9 @@
 | 直连 Admin | `http://localhost:8081` | 本地开发推荐 |
 | 经 Gateway | `http://localhost:8080/admin` | 网关 `StripPrefix=1`，业务路径与直连一致 |
 
-**示例**
-
 ```text
 直连登录：  POST http://localhost:8081/auth/login
 网关登录：  POST http://localhost:8080/admin/auth/login
-
-直连患者：  GET  http://localhost:8081/biz/patient/list
-网关患者：  GET  http://localhost:8080/admin/biz/patient/list
 ```
 
 默认账号：`admin` / `123456`
@@ -29,33 +24,62 @@
 
 ## 2. 通用约定
 
-### 2.1 鉴权（Sa-Token）
+### 2.1 只允许 GET / POST
+
+系统接口 **仅使用 GET、POST**，不再使用 PUT / DELETE / PATCH。
+
+| 操作 | 约定 |
+|------|------|
+| 查询 | `GET` |
+| 新增 | `POST /资源` |
+| 修改 | `POST /资源/edit` |
+| 删除 | `POST /资源/remove/{id}` |
+| 其它动作 | `POST /资源/动作` |
+
+### 2.2 鉴权（Sa-Token）
 
 | 项 | 说明 |
 |----|------|
 | Header | `Authorization: Bearer {token}` |
-| 实现 | Sa-Token + Redis（同账号互踢，`is-concurrent: false`） |
-| 白名单 | `POST /auth/login`（及 Swagger / Actuator） |
-| 其余接口 | 均需携带有效 Token |
+| 白名单 | `POST /auth/login`、Swagger、Actuator |
+| 其余接口 | 均需有效 Token |
 | Token 有效期 | 7200 秒（2 小时） |
 
-### 2.2 统一响应 `R<T>`
+### 2.3 诊所隔离（一对多）
+
+一个员工可关联多个诊所（`t_employee_clinic`）。
+
+登录后：
+
+1. 返回 `clinics`（可进入诊所列表）和 `needSelectClinic`
+2. 仅 1 个诊所：自动选中，`needSelectClinic=false`
+3. 多个诊所：必须调用 `POST /auth/selectClinic` 后再进业务页
+4. 患者、预约、员工、部门、基础业务数据 **一律按当前所选诊所查询**，请求里的 `clinicId` 会被忽略
+
+未选诊所访问业务接口：`code=400`，`msg=请先选择诊所后再操作`
+
+切换诊所：再次调用 `POST /auth/selectClinic`
+
+### 2.4 统一响应 `R<T>`
 
 ```json
 {
   "code": 200,
   "msg": "操作成功",
-  "data": {}
+  "data": {},
+  "success": true
 }
 ```
 
 | code | 含义 |
 |------|------|
 | 200 | 成功 |
+| 400 | 参数错误 / 未选诊所 / JSON 格式错误 |
 | 401 | 未登录 / Token 失效 |
+| 403 | 无权限 |
 | 500 | 业务或系统失败（见 `msg`） |
 
-### 2.3 分页 `PageResult<T>`
+### 2.5 分页 `PageResult<T>`
 
 ```json
 {
@@ -66,32 +90,31 @@
 }
 ```
 
-分页查询通用 Query：`pageNum`（默认 1）、`pageSize`（默认 20）
+Query：`pageNum`（默认 1）、`pageSize`（默认 20）
 
-### 2.4 时间与字段
+### 2.6 时间与字段
 
 - 日期时间：`yyyy-MM-dd HH:mm:ss`，时区 `GMT+8`
 - 纯日期：`yyyy-MM-dd`
 - JSON 字段：驼峰 camelCase
-- 逻辑删除字段：`isDelete`（0 否 / 1 是），前端一般忽略
-- 审计字段（多数实体）：`createBy` / `createTime` / `updateBy` / `updateTime` / `remark`
+- Header：`Content-Type: application/json`；Body 必须是原始 JSON，不要写成 `{ \"username\": \"admin\" }`
 
 ---
 
 ## 3. 推荐联调顺序
 
 ```text
-1. POST /auth/login                         → 取 token
-2. GET  /auth/info                          → 用户 / 菜单 / 权限
-3. GET  /biz/basic/dict/{dictType}          → 字典下拉
-4. GET  /biz/basic/doctor/list              → 医生列
-5. GET  /biz/patient/list | /sidebar        → 患者
-6. GET  /biz/appointment/dayGrid|calendar   → 预约视图
+1. POST /auth/login
+2. 若 needSelectClinic=true → POST /auth/selectClinic
+3. GET  /auth/info
+4. GET  /biz/patient/list
+5. GET  /biz/appointment/dayGrid?day=yyyy-MM-dd
+6. GET  /system/employee/list
 ```
 
 ---
 
-## 4. 登录鉴权 `/auth`（Sa-Token）
+## 4. 登录鉴权 `/auth`
 
 ### 4.1 登录
 
@@ -106,31 +129,50 @@
 }
 ```
 
-> Header：`Content-Type: application/json`  
-> Body 必须是原始 JSON，不要写成 `{ \"username\": \"admin\" }` 这种带反斜杠的形式（Postman/Apifox 选 raw → JSON）。
-
 **data**
 
 ```json
 {
   "token": "uuid-token-string",
-  "user": { "id": 1, "name": "管理员", "clinicId": 1, "deptId": 1, "username": "admin" }
+  "user": { "id": 1, "name": "管理员", "username": "admin", "clinicIds": [1] },
+  "clinics": [{ "id": 1, "clinicName": "宇健口腔", "clinicCode": "YJ01" }],
+  "needSelectClinic": false,
+  "currentClinicId": 1
 }
 ```
 
-> Token 由 Sa-Token 签发并写入 Redis；请在后续请求 Header 携带：`Authorization: Bearer {token}`
+| 字段 | 说明 |
+|------|------|
+| token | 后续请求 Header：`Authorization: Bearer {token}` |
+| clinics | 该员工可进入的诊所 |
+| needSelectClinic | `true` 时必须先选诊所再进业务页 |
+| currentClinicId | 已自动选中时有值；多诊所未选则为 null |
 
-### 4.2 当前用户信息
+### 4.2 选择诊所
+
+`POST /auth/selectClinic`（需 Token）
+
+```json
+{ "clinicId": 1 }
+```
+
+**data**：`{ "clinicId": 1, "clinicName": "宇健口腔" }`
+
+无权进入该诊所：`无权进入该诊所`
+
+### 4.3 可进入诊所列表
+
+`GET /auth/clinics`
+
+### 4.4 当前用户信息
 
 `GET /auth/info`
 
-**data**：`{ user, roles, menus, permissions }`
+**data**：`{ user, roles, menus, permissions, clinics, currentClinicId, currentClinicName }`
 
-### 4.3 退出
+### 4.5 退出
 
-`POST /auth/logout`（需 Token）
-
-注销当前 Token，Redis 会话同步失效。
+`POST /auth/logout`
 
 ---
 
@@ -141,53 +183,40 @@
 | 方法 | 路径 | 说明 | 传参 |
 |------|------|------|------|
 | GET | `/system/clinic/list` | 列表 | Query：`clinicName?` `clinicCode?` `status?` `parentId?` |
-| GET | `/system/clinic/tree` | 树（当前实现为列表） | 同上 |
+| GET | `/system/clinic/tree` | 树数据 | 同上 |
 | GET | `/system/clinic/{id}` | 详情 | Path：`id` |
 | POST | `/system/clinic` | 新增 | Body：`SysClinic` |
-| PUT | `/system/clinic` | 修改 | Body：`SysClinic`（含 `id`） |
-| DELETE | `/system/clinic/{id}` | 删除 | Path：`id` |
+| POST | `/system/clinic/edit` | 修改 | Body：含 `id` |
+| POST | `/system/clinic/remove/{id}` | 删除 | Path：`id` |
 
-**SysClinic 主要字段**
+**SysClinic**：`parentId` `clinicName` `clinicCode` `shortName` `contactName` `contactPhone` `province` `city` `district` `address` `businessHours` `logo` `sortOrder` `status`(0正常1停用) `openDate`
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| id | Long | 主键 |
-| parentId | Long | 父诊所，0=总部 |
-| clinicName | String | 名称 |
-| clinicCode | String | 编码（唯一） |
-| shortName | String | 简称 |
-| contactName / contactPhone | String | 联系人/电话 |
-| province / city / district / address | String | 地址 |
-| businessHours | String | 营业时间 |
-| logo | String | Logo URL |
-| sortOrder | Integer | 排序 |
-| status | Integer | 0正常 1停用 |
-| openDate | String | 开业日 yyyy-MM-dd |
-
-### 5.2 部门 `/system/dept`
+### 5.2 部门 `/system/dept`（当前诊所）
 
 | 方法 | 路径 | 传参 |
 |------|------|------|
-| GET | `/system/dept/list` | Query：`clinicId?` `deptName?` `status?` |
+| GET | `/system/dept/list` | Query：`deptName?` `status?` |
 | GET | `/system/dept/{id}` | Path：`id` |
 | POST | `/system/dept` | Body：`SysDept` |
-| PUT | `/system/dept` | Body：`SysDept` |
-| DELETE | `/system/dept/{id}` | Path：`id` |
+| POST | `/system/dept/edit` | Body：`SysDept` |
+| POST | `/system/dept/remove/{id}` | Path：`id` |
 
-**SysDept 主要字段**：`id` `clinicId` `parentId` `deptName` `deptCode` `leader` `phone` `sortOrder` `status`
+**SysDept**：`clinicId` `parentId` `deptName` `deptCode` `leader` `phone` `sortOrder` `status`
 
-### 5.3 员工 `/system/employee`
+### 5.3 员工 `/system/employee`（当前诊所）
+
+列表只返回 **关联了当前诊所** 的员工。一个员工可关联多个诊所（`clinicIds`）。
 
 | 方法 | 路径 | 传参 |
 |------|------|------|
-| GET | `/system/employee/list` | Query：`keyword?` `clinicId?` `deptId?` `employStatus?` `pageNum` `pageSize` |
+| GET | `/system/employee/list` | Query：`keyword?` `employStatus?` `pageNum` `pageSize` |
 | GET | `/system/employee/{id}` | Path：`id` |
-| POST | `/system/employee` | Body：`SysEmployee`（可含 `roleIds`） |
-| PUT | `/system/employee` | Body：`SysEmployee`（见下方更新约定） |
-| PUT | `/system/employee/status` | Body：`{ "id": 1, "status": 0\|1 }` 仅启停 |
-| DELETE | `/system/employee/{id}` | Path：`id` |
-| PUT | `/system/employee/resetPwd` | Body：`{ "id": 1, "password": "新密码" }` |
-| PUT | `/system/employee/sort/{id}/{direction}` | Path：`direction` = `up` \| `down` |
+| POST | `/system/employee` | Body：`SysEmployee`（可含 `roleIds`、`clinicIds`） |
+| POST | `/system/employee/edit` | Body：见更新约定 |
+| POST | `/system/employee/status` | `{ "id": 1, "status": 0\|1 }` |
+| POST | `/system/employee/remove/{id}` | Path：`id` |
+| POST | `/system/employee/resetPwd` | `{ "id": 1, "password": "新密码" }` |
+| POST | `/system/employee/sort/{id}/{direction}` | `direction` = `up` \| `down` |
 
 **SysEmployee 主要字段**
 
@@ -197,25 +226,25 @@
 | gender | 0女 1男 2未知 |
 | birthday | yyyy-MM-dd |
 | mobile / email | 手机 / 邮箱 |
-| clinicId / deptId | 诊所 / 部门 |
-| position | 岗位（自由文本，暂未字典化） |
+| clinicId | 主诊所冗余字段，以前端 `clinicIds` 为准 |
+| clinicIds | 关联诊所 ID 列表（一对多） |
+| clinicNames | 关联诊所名称（列表返回） |
+| position | 岗位（自由文本） |
 | employStatus | 1在职 0离职 |
-| mobileLink | 1允许手机端 0不允许 |
-| idType / idNumber | 证件 |
-| avatar | 头像 |
-| entryDate / leaveDate | 入职/离职 |
 | sortOrder / status | 排序 / 0正常1停用 |
-| roleIds | 角色ID列表（列表/详情均返回；保存约定见下） |
-| roleNames | 角色名称逗号拼接（列表联查） |
+| roleIds / roleNames | 角色 ID / 名称 |
 
-**修改约定（重要）**
+**修改约定**
 
 | 场景 | 怎么做 |
 |------|--------|
-| 改基础资料 | `PUT /system/employee`，`id` 必填；建议带齐表单字段（MyBatis-Plus `updateById` 会更新非 null 字段） |
-| 角色 | `roleIds == null`：**不改**原关联；`roleIds` 有值（含 `[]`）：全量同步；`[]` 表示清空角色 |
-| 密码 | **禁止**走 PUT 员工；只用 `PUT /system/employee/resetPwd` |
-| 仅启停 | 优先 `PUT /system/employee/status`，`{ "id", "status" }`，不碰角色与其它字段 |
+| 改基础资料 | `POST /system/employee/edit`，`id` 必填 |
+| 角色 | `roleIds == null` 不改；非 null（含 `[]`）全量同步 |
+| 诊所 | `clinicIds == null` 不改；非 null 全量同步，**不能传空数组** |
+| 密码 | 只用 `POST /system/employee/resetPwd` |
+| 仅启停 | `POST /system/employee/status` |
+
+新增未传 `clinicIds` 时，默认绑定当前所选诊所。
 
 ### 5.4 角色 `/system/role`
 
@@ -223,12 +252,12 @@
 |------|------|------|
 | GET | `/system/role/list` | Query：`roleName?` `roleKey?` `status?` |
 | GET | `/system/role/{id}` | Path：`id` |
-| POST | `/system/role` | Body：`SysRole`（可含 `menuIds`） |
-| PUT | `/system/role` | Body：`SysRole` |
-| DELETE | `/system/role/{id}` | Path：`id` |
-| PUT | `/system/role/auth` | Body：`{ "roleId": 1, "menuIds": [1,2,3] }` |
-| GET | `/system/role/{id}/menus` | 已选菜单ID列表 |
-| PUT | `/system/role/move/{id}/{direction}` | `up` \| `down` |
+| POST | `/system/role` | Body：可含 `menuIds` |
+| POST | `/system/role/edit` | Body：`SysRole` |
+| POST | `/system/role/remove/{id}` | Path：`id` |
+| POST | `/system/role/auth` | `{ "roleId": 1, "menuIds": [1,2,3] }` |
+| GET | `/system/role/{id}/menus` | 已选菜单 ID |
+| POST | `/system/role/move/{id}/{direction}` | `up` \| `down` |
 
 **SysRole**：`roleName` `roleKey` `sortOrder` `dataScope`(1全部/2本诊所/3本部门/4仅本人/5自定义) `status` `menuIds`
 
@@ -240,194 +269,77 @@
 | GET | `/system/menu/tree` | Query：`platform` 默认 `web` |
 | GET | `/system/menu/{id}` | Path：`id` |
 | POST | `/system/menu` | Body：`SysMenu` |
-| PUT | `/system/menu` | Body：`SysMenu` |
-| DELETE | `/system/menu/{id}` | Path：`id` |
+| POST | `/system/menu/edit` | Body：`SysMenu` |
+| POST | `/system/menu/remove/{id}` | Path：`id` |
 | GET | `/system/menu/employee/{employeeId}` | Query：`platform` 默认 `web` |
-| GET | `/system/menu/employee/{employeeId}/perms` | 权限标识字符串列表 |
+| GET | `/system/menu/employee/{employeeId}/perms` | 权限标识列表 |
 
 **SysMenu**：`menuName` `parentId` `sortOrder` `path` `component` `perms` `menuType`(M目录/C菜单/F按钮) `platform`(web/mobile) `icon` `visible`(0显示1隐藏) `status`
 
 ---
 
-## 6. 基础数据 `/biz/basic`
+## 6. 基础数据 `/biz/basic`（当前诊所）
 
 | 方法 | 路径 | 传参 |
 |------|------|------|
 | GET | `/biz/basic/dict/types` | — |
-| GET | `/biz/basic/dict/{dictType}` | Path：字典类型编码，如 `appoint_status` |
+| GET | `/biz/basic/dict/{dictType}` | 如 `appoint_status` |
 | POST | `/biz/basic/dict/data` | Body：`BizDictData` |
-| DELETE | `/biz/basic/dict/data/{id}` | Path：`id` |
-| GET | `/biz/basic/tag/list` | Query：`clinicId?` |
+| POST | `/biz/basic/dict/data/remove/{id}` | Path：`id` |
+| GET | `/biz/basic/tag/list` | — |
 | POST | `/biz/basic/tag` | Body：`BizPatientTag` |
-| DELETE | `/biz/basic/tag/{id}` | — |
-| GET | `/biz/basic/source/tree` | Query：`clinicId?` |
+| POST | `/biz/basic/tag/remove/{id}` | — |
+| GET | `/biz/basic/source/tree` | — |
 | POST | `/biz/basic/source` | Body：`BizPatientSource` |
-| DELETE | `/biz/basic/source/{id}` | — |
-| GET | `/biz/basic/item/list` | Query：`clinicId?` |
+| POST | `/biz/basic/source/remove/{id}` | — |
+| GET | `/biz/basic/item/list` | — |
 | POST | `/biz/basic/item` | Body：`BizTreatItem` |
-| DELETE | `/biz/basic/item/{id}` | — |
-| GET | `/biz/basic/doctor/list` | Query：`clinicId?` → `{ id, name, empNo, position, clinicId }` |
+| POST | `/biz/basic/item/remove/{id}` | — |
+| GET | `/biz/basic/doctor/list` | 当前诊所医生列 |
 
-**常用 dictType**（以初始化数据为准）：`appoint_status` `visit_type` `cancel_reason` `gender` 等。
-
-**BizDictData**：`dictType` `dictLabel` `dictValue` `cssClass` `sortOrder` `status`  
-**BizPatientTag**：`clinicId` `tagName` `tagColor` `sortOrder` `status`  
-**BizPatientSource**：`clinicId` `parentId` `sourceName` `sortOrder` `status`  
-**BizTreatItem**：`clinicId` `itemName` `itemCode` `duration` `itemColor` `sortOrder` `status`
+**常用 dictType**：`appoint_status` `visit_type` `cancel_reason` `gender`
 
 ---
 
-## 7. 患者 `/biz/patient`
+## 7. 患者 `/biz/patient`（当前诊所）
 
 ### 7.1 主接口
 
 | 方法 | 路径 | 传参 |
 |------|------|------|
-| GET | `/biz/patient/list` | Query：`keyword?` `clinicId?` `doctorId?` `firstDoctorId?` `tagId?` `pageNum` `pageSize` |
-| GET | `/biz/patient/sidebar` | Query：`type`=`today`\|`all`\|`recent`（默认 all），`clinicId?` `keyword?` `day?`(yyyy-MM-dd) `pageNum` `pageSize`(默认50) |
-| GET | `/biz/patient/search` | Query：`keyword`**必填** `clinicId?` `limit`(默认20) |
-| GET | `/biz/patient/{id}` | 详情 |
-| GET | `/biz/patient/{id}/profile` | 画像：`{ patient, cards, logs }` |
-| GET | `/biz/patient/{id}/timeline` | Query：`clinicId?` `beginTime?` `endTime?` |
-| POST | `/biz/patient` | Body：`BizPatient` |
-| PUT | `/biz/patient` | Body：`BizPatient` |
-| DELETE | `/biz/patient/{id}` | — |
-| POST | `/biz/patient/saveWithAction` | Query：`action`=`save`\|`arrive`\|`appoint`；Body：`BizPatient`；返回 `{ patientId, action }` |
+| GET | `/biz/patient/list` | Query：`keyword?` `doctorId?` `firstDoctorId?` `tagId?` `pageNum` `pageSize` |
+| GET | `/biz/patient/sidebar` | `type`=`today`\|`all`\|`recent`，`keyword?` `day?` `pageNum` `pageSize` |
+| GET | `/biz/patient/search` | `keyword` 必填，`limit` 默认 20 |
+| GET | `/biz/patient/{id}` | 详情（须属当前诊所） |
+| GET | `/biz/patient/{id}/profile` | `{ patient, cards, logs }` |
+| GET | `/biz/patient/{id}/timeline` | `beginTime?` `endTime?` |
+| POST | `/biz/patient` | Body：`BizPatient`（clinicId 由后端写入） |
+| POST | `/biz/patient/edit` | Body：`BizPatient` |
+| POST | `/biz/patient/remove/{id}` | — |
+| POST | `/biz/patient/saveWithAction` | Query：`action`=`save`\|`arrive`\|`appoint` |
 
-**BizPatient 主要字段**
+**BizPatient 主要字段**：`name` `namePinyin` `gender` `mobile` `medicalRecordNo` `doctorId` `firstDoctorId` `tagIds` 等。新增不传 `clinicId`，后端用当前诊所。
 
-| 字段 | 说明 |
-|------|------|
-| clinicId | 诊所 |
-| medicalRecordNo | 病历号（空则后端按诊所生成） |
-| name / namePinyin | 姓名 / 拼音 |
-| gender | 0女 1男 2未知 |
-| starLevel | 星级 |
-| birthday / age | 生日 / 年龄 |
-| mobile / mobileRelation | 手机 / 关系 |
-| phone / phoneRelation | 电话 / 关系 |
-| idNumber | 证件号 |
-| medicareCardNo / medicareBalance | 医保 |
-| province / city / district / address / residence | 地址 |
-| avatar | 头像 |
-| patientType / patientCategory | 类型/分类 |
-| sourceId | 来源 |
-| introducerType / introducerId / introducerName | 介绍人 |
-| doctorId / firstDoctorId / lastDoctorId | 医生 |
-| firstVisitTime / nextVisitTime / lastVisitTime | 就诊时间 |
-| oweAmount / paidAmount / prepayAmount / totalAmount / avgAmount | 金额 |
-| referralCount | 转介数 |
-| status | 状态 |
-| tagIds | 标签ID列表（保存用，非表字段） |
+### 7.2 详情 Tab
 
-**profile.cards 示例字段**：`referralCount` `prepayAmount` `lastVisitTime` `totalAmount` `avgAmount` `oweAmount` `paidAmount`
-
-### 7.2 患者详情 Tab（同前缀 `/biz/patient`）
-
-#### 亲友关系
-
-| 方法 | 路径 | 传参 |
-|------|------|------|
-| GET | `/biz/patient/{patientId}/relations` | — |
-| POST | `/biz/patient/{patientId}/relations` | Body：需 `relatedId` `relationType`；`clinicId` 可省略 |
-| DELETE | `/biz/patient/relations/{id}` | — |
-
-#### 操作日志
-
-| 方法 | 路径 |
-|------|------|
-| GET | `/biz/patient/{patientId}/logs` |
-
-#### 就诊
-
-| 方法 | 路径 | Body |
-|------|------|------|
-| GET | `/biz/patient/{patientId}/visits` | — |
-| POST | `/biz/patient/{patientId}/visits` | `BizVisit` |
-| PUT | `/biz/patient/visits` | `BizVisit` |
-
-**BizVisit**：`appointmentId` `doctorId` `nurseId` `consultantId` `visitType` `visitStatus` `itemName` `startTime` `endTime`
-
-#### 病历
-
-| 方法 | 路径 | 传参 |
-|------|------|------|
-| GET | `/biz/patient/{patientId}/medicalRecords` | Query：`visitType?` `beginTime?` `endTime?` |
-| POST | `/biz/patient/{patientId}/medicalRecords` | Body：`BizMedicalRecord` |
-| PUT | `/biz/patient/medicalRecords` | Body：`BizMedicalRecord` |
-| DELETE | `/biz/patient/medicalRecords/{id}` | — |
-
-**BizMedicalRecord**：`visitId` `doctorId` `visitType` `visitTime` `chiefComplaint` `treatment` `advice`
-
-#### 处置
-
-| 方法 | 路径 | Body |
-|------|------|------|
-| GET | `/biz/patient/{patientId}/treatments` | — |
-| POST | `/biz/patient/{patientId}/treatments` | `BizTreatmentRecord` |
-| PUT | `/biz/patient/treatments` | `BizTreatmentRecord` |
-| DELETE | `/biz/patient/treatments/{id}` | — |
-
-**BizTreatmentRecord**：`visitId` `doctorId` `nurseId` `itemId` `itemName` `toothPositions` `visitType` `amount` `treatTime`
-
-#### 收费
-
-| 方法 | 路径 | Body |
-|------|------|------|
-| GET | `/biz/patient/{patientId}/charges` | — |
-| POST | `/biz/patient/{patientId}/charges` | `BizChargeRecord`（可自动生成单号/金额状态） |
-| PUT | `/biz/patient/charges` | `BizChargeRecord` |
-
-**BizChargeRecord**：`visitId` `chargeNo` `totalAmount` `paidAmount` `oweAmount` `payMethod` `chargeStatus` `chargeTime` `cashierId`
-
-#### 回访
-
-| 方法 | 路径 | Body |
-|------|------|------|
-| GET | `/biz/patient/{patientId}/followUps` | — |
-| POST | `/biz/patient/{patientId}/followUps` | `BizFollowUp` |
-| PUT | `/biz/patient/followUps` | `BizFollowUp` |
-| DELETE | `/biz/patient/followUps/{id}` | — |
-
-**BizFollowUp**：`visitId` `planTime` `actualTime` `followType` `followStatus` `content` `result` `ownerId`
-
-#### 附件（影像/文档/协议）
-
-| 方法 | 路径 | 传参 |
-|------|------|------|
-| GET | `/biz/patient/{patientId}/files` | Query：`fileCategory?` `fileType?` `beginTime?` `endTime?` |
-| POST | `/biz/patient/{patientId}/files` | Body：**必填** `fileUrl`；`fileCategory` 默认 `document` |
-| DELETE | `/biz/patient/files/{id}` | — |
-
-**fileCategory**：`image` \| `document` \| `agreement`  
-**BizPatientFile**：`visitId` `fileCategory` `fileType` `fileName` `fileUrl` `fileSize` `uploadTime`
-
-#### 治疗计划
-
-| 方法 | 路径 | Body |
-|------|------|------|
-| GET | `/biz/patient/{patientId}/plans` | — |
-| POST | `/biz/patient/{patientId}/plans` | `BizTreatPlan` |
-| PUT | `/biz/patient/plans` | `BizTreatPlan` |
-| DELETE | `/biz/patient/plans/{id}` | — |
-
-**BizTreatPlan**：`doctorId` `planName` `planContent` `estimateAmount` `planStatus`
-
-#### 咨询沟通
-
-| 方法 | 路径 | Body |
-|------|------|------|
-| GET | `/biz/patient/{patientId}/consults` | — |
-| POST | `/biz/patient/{patientId}/consults` | `BizConsultRecord` |
-| PUT | `/biz/patient/consults` | `BizConsultRecord` |
-
-**BizConsultRecord**：`consultantId` `consultTime` `content` `intention`
+| 模块 | 查询 | 新增 | 修改 | 删除 |
+|------|------|------|------|------|
+| 亲友 | GET `/{patientId}/relations` | POST 同路径 | — | POST `/relations/remove/{id}` |
+| 日志 | GET `/{patientId}/logs` | — | — | — |
+| 就诊 | GET `/{patientId}/visits` | POST 同路径 | POST `/visits/edit` | — |
+| 病历 | GET `/{patientId}/medicalRecords` | POST 同路径 | POST `/medicalRecords/edit` | POST `/medicalRecords/remove/{id}` |
+| 处置 | GET `/{patientId}/treatments` | POST 同路径 | POST `/treatments/edit` | POST `/treatments/remove/{id}` |
+| 收费 | GET `/{patientId}/charges` | POST 同路径 | POST `/charges/edit` | — |
+| 回访 | GET `/{patientId}/followUps` | POST 同路径 | POST `/followUps/edit` | POST `/followUps/remove/{id}` |
+| 附件 | GET `/{patientId}/files` | POST 同路径，必填 `fileUrl` | — | POST `/files/remove/{id}` |
+| 计划 | GET `/{patientId}/plans` | POST 同路径 | POST `/plans/edit` | POST `/plans/remove/{id}` |
+| 咨询 | GET `/{patientId}/consults` | POST 同路径 | POST `/consults/edit` | — |
 
 ---
 
-## 8. 预约 `/biz/appointment`
+## 8. 预约 `/biz/appointment`（当前诊所）
 
-### 8.1 状态字典
+### 8.1 状态
 
 | 值 | 含义 |
 |----|------|
@@ -442,62 +354,47 @@
 
 `visitType`：`1` 初诊 / `2` 复诊
 
-### 8.2 接口列表
+### 8.2 接口
 
 | 方法 | 路径 | 传参 |
 |------|------|------|
-| GET | `/biz/appointment/list` | Query：`keyword?` `clinicId?` `doctorId?` `consultantId?` `visitType?` `status?` `appointSource?` `beginTime?` `endTime?` `pageNum` `pageSize` |
-| GET | `/biz/appointment/calendar` | Query：`clinicId?` **`beginTime`** **`endTime`** `doctorId?` `status?`(可逗号多状态) |
-| GET | `/biz/appointment/dayGrid` | Query：`clinicId?` **`day`**(yyyy-MM-dd) `status?` → `{ day, columns[{doctorId,doctorName,count,appointments}], total }` |
-| GET | `/biz/appointment/stats/statusCount` | Query：`clinicId?` `beginTime?` `endTime?` `doctorId?` → `{ all, booked, confirmed, arrived, treating, left, expired, lost, missed, byStatus }` |
-| GET | `/biz/appointment/stats/today` | Query：`clinicId?` → 今日卡片统计 |
+| GET | `/biz/appointment/list` | `keyword?` `doctorId?` `consultantId?` `visitType?` `status?` `appointSource?` `beginTime?` `endTime?` `pageNum` `pageSize` |
+| GET | `/biz/appointment/calendar` | **`beginTime`** **`endTime`** `doctorId?` `status?`(逗号多状态) |
+| GET | `/biz/appointment/dayGrid` | **`day`**(yyyy-MM-dd) `status?` |
+| GET | `/biz/appointment/stats/statusCount` | `beginTime?` `endTime?` `doctorId?` |
+| GET | `/biz/appointment/stats/today` | 今日卡片 |
 | GET | `/biz/appointment/{id}` | 详情 |
 | POST | `/biz/appointment` | Body：`BizAppointment` |
-| PUT | `/biz/appointment` | Body：`BizAppointment` |
-| DELETE | `/biz/appointment/{id}` | Query：`cancelReason?`（逻辑删进回收站） |
-| PUT | `/biz/appointment/status` | Body：`{ "id": 1, "status": 3, "remark": "" }` |
-| PUT | `/biz/appointment/confirm/{id}` | 确认 |
-| PUT | `/biz/appointment/cancel` | Body：`{ "id": 1, "cancelReason": "..." }` |
-| PUT | `/biz/appointment/seat/{id}` | 接诊入位 |
+| POST | `/biz/appointment/edit` | Body：`BizAppointment` |
+| POST | `/biz/appointment/remove/{id}` | Query：`cancelReason?`（进回收站） |
+| POST | `/biz/appointment/status` | `{ "id": 1, "status": 3, "remark": "" }` |
+| POST | `/biz/appointment/confirm/{id}` | 确认 |
+| POST | `/biz/appointment/cancel` | `{ "id": 1, "cancelReason": "..." }` |
+| POST | `/biz/appointment/seat/{id}` | 入座 |
 | GET | `/biz/appointment/{id}/logs` | 操作日志 |
-| GET | `/biz/appointment/recycle/list` | 回收站分页（同 list 筛选字段） |
-| PUT | `/biz/appointment/recycle/restore/{id}` | 还原 |
-| DELETE | `/biz/appointment/recycle/{id}` | 彻底删除 |
+| GET | `/biz/appointment/recycle/list` | 回收站分页 |
+| POST | `/biz/appointment/recycle/restore/{id}` | 还原 |
+| POST | `/biz/appointment/recycle/remove/{id}` | 彻底删除 |
 
-**BizAppointment 主要字段**
-
-| 字段 | 说明 |
-|------|------|
-| clinicId / patientId | 诊所 / 患者 |
-| doctorId / nurseId / consultantId | 医生 / 护士 / 咨询师 |
-| startTime / endTime | 开始/结束 |
-| visitType / status | 初复诊 / 状态 |
-| itemId / itemName / itemColor | 项目与日历色 |
-| triaged / registered | 分诊/挂号标记 |
-| appointType / appointSource | 类型/来源 |
-| cancelReason | 取消原因 |
-
-新增/修改会做医生时间冲突校验。
+新增预约会校验：患者属于当前诊所、医生时段不冲突。`clinicId` 由后端写入。
 
 ---
 
-## 9. 日程 `/biz/schedule`
+## 9. 日程 `/biz/schedule`（当前诊所）
 
 | 方法 | 路径 | 传参 |
 |------|------|------|
-| GET | `/biz/schedule/list` | Query：`clinicId?` `doctorId?` **`beginTime`** **`endTime`** |
-| POST | `/biz/schedule` | Body：必填 `title` `startTime` `endTime` |
-| PUT | `/biz/schedule` | Body：`BizSchedule` |
-| DELETE | `/biz/schedule/{id}` | — |
-
-**BizSchedule**：`clinicId` `doctorId` `title` `startTime` `endTime` `color` `status`
+| GET | `/biz/schedule/list` | `doctorId?` **`beginTime`** **`endTime`** |
+| POST | `/biz/schedule` | 必填 `title` `startTime` `endTime` |
+| POST | `/biz/schedule/edit` | Body：`BizSchedule` |
+| POST | `/biz/schedule/remove/{id}` | — |
 
 ---
 
-## 10. 前端请求示例
+## 10. 请求示例
 
 ```http
-### 登录
+### 1. 登录
 POST http://localhost:8081/auth/login
 Content-Type: application/json
 
@@ -506,33 +403,39 @@ Content-Type: application/json
   "password": "123456"
 }
 
-### 带 Token 查患者列表
-GET http://localhost:8081/biz/patient/list?pageNum=1&pageSize=20&keyword=
+### 2. 多诊所时选择诊所
+POST http://localhost:8081/auth/selectClinic
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "clinicId": 1 }
+
+### 3. 患者列表（按当前诊所，无需再传 clinicId）
+GET http://localhost:8081/biz/patient/list?pageNum=1&pageSize=20
 Authorization: Bearer {{token}}
 
-### 日视图
-GET http://localhost:8081/biz/appointment/dayGrid?day=2026-08-14
+### 4. 员工列表
+GET http://localhost:8081/system/employee/list?pageNum=1&pageSize=20
 Authorization: Bearer {{token}}
 
-### 新增预约
-POST http://localhost:8081/biz/appointment
+### 5. 修改员工（POST /edit，可带 clinicIds）
+POST http://localhost:8081/system/employee/edit
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-  "clinicId": 1,
-  "patientId": 1,
-  "doctorId": 1,
-  "startTime": "2026-08-14 09:00:00",
-  "endTime": "2026-08-14 09:30:00",
-  "visitType": 1,
-  "status": 1,
-  "itemId": 1,
-  "itemName": "洗牙"
+  "id": 3,
+  "name": "张三",
+  "clinicIds": [1, 2],
+  "roleIds": [1]
 }
+
+### 6. 删除（POST /remove）
+POST http://localhost:8081/system/employee/remove/3
+Authorization: Bearer {{token}}
 ```
 
-Axios 建议：
+Axios：
 
 ```js
 axios.defaults.baseURL = 'http://localhost:8081' // 或 'http://localhost:8080/admin'
@@ -543,37 +446,37 @@ axios.interceptors.request.use((config) => {
 })
 ```
 
----
-
-## 11. 接口路径速查（全量）
+前端登录后建议：
 
 ```text
-# 鉴权（Sa-Token）
-POST   /auth/login
-GET    /auth/info
-POST   /auth/logout
+login → 若 needSelectClinic → 弹出诊所选择 → selectClinic → 进入首页
+切换诊所 → selectClinic → 刷新列表
+```
 
-# 系统
-GET|POST|PUT|DELETE  /system/clinic...
-GET|POST|PUT|DELETE  /system/dept...
-GET|POST|PUT|DELETE  /system/employee...  (+ status / resetPwd / sort)
-GET|POST|PUT|DELETE  /system/role...      (+ auth / menus / move)
-GET|POST|PUT|DELETE  /system/menu...      (+ tree / employee menus|perms)
+---
 
-# 基础数据
-GET|POST|DELETE      /biz/basic/dict...
-GET|POST|DELETE      /biz/basic/tag...
-GET|POST|DELETE      /biz/basic/source...
-GET|POST|DELETE      /biz/basic/item...
-GET                  /biz/basic/doctor/list
+## 11. 接口路径速查
 
-# 患者
-GET|POST|PUT|DELETE  /biz/patient...
-GET|POST|DELETE      /biz/patient/{id}/relations|logs|visits|medicalRecords|treatments|charges|followUps|files|plans|consults ...
+```text
+# 鉴权
+POST /auth/login
+POST /auth/selectClinic
+GET  /auth/clinics
+GET  /auth/info
+POST /auth/logout
 
-# 预约 / 日程
-GET|POST|PUT|DELETE  /biz/appointment...
-GET|POST|PUT|DELETE  /biz/schedule...
+# 系统（仅 GET/POST）
+GET|POST  /system/clinic...     (+ /edit /remove/{id})
+GET|POST  /system/dept...       (+ /edit /remove/{id})  当前诊所
+GET|POST  /system/employee...   (+ /edit /status /resetPwd /sort /remove/{id})  当前诊所
+GET|POST  /system/role...       (+ /edit /auth /move /remove/{id})
+GET|POST  /system/menu...       (+ /edit /tree /remove/{id})
+
+# 业务（当前诊所）
+GET|POST  /biz/basic/...
+GET|POST  /biz/patient...       (+ /edit /remove/{id} /saveWithAction + Tab)
+GET|POST  /biz/appointment...   (+ /edit /status /confirm /cancel /seat /recycle)
+GET|POST  /biz/schedule...      (+ /edit /remove/{id})
 ```
 
 ---
@@ -582,7 +485,8 @@ GET|POST|PUT|DELETE  /biz/schedule...
 
 | 文件 | 说明 |
 |------|------|
-| `document/sql/00_full_schema.sql` | 表结构 |
+| `document/sql/00_full_schema.sql` | 完整表结构（含 `t_employee_clinic`） |
 | `document/sql/01_init_data.sql` | 初始化数据 |
-| `document/design/table-naming.md` | 表命名规范 |
+| `document/sql/02_employee_clinic.sql` | 已有库增量：建关联表并迁移原 `clinic_id` |
+| `document/sql/03_drop_employee_dept_mobile.sql` | 已有库增量：去掉员工 `dept_id`、`mobile_link` |
 | Knife4j | http://localhost:8081/doc.html |

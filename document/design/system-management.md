@@ -4,8 +4,7 @@
 
 ```text
 t_clinic 1 ---- n t_dept
-t_clinic 1 ---- n t_employee
-t_dept   1 ---- n t_employee
+t_employee n ---- n t_clinic   (t_employee_clinic)
 t_employee n ---- n t_role     (t_employee_role)
 t_role     n ---- n t_menu     (t_role_menu)
 ```
@@ -30,12 +29,10 @@ t_role     n ---- n t_menu     (t_role_menu)
 | 性别 | gender |
 | 生日 | birthday |
 | 手机号码 | mobile |
-| 工作诊所 | clinic_id |
+| 工作诊所 | clinic_id / t_employee_clinic |
 | 在职状态 | employ_status |
-| 所属部门 | dept_id |
 | 角色 | 关联 t_role |
 | 岗位 | position |
-| 手机关联 | mobile_link |
 | 证件类型 | id_type |
 | 证件号码 | id_number |
 

@@ -36,6 +36,6 @@ public class BizPatientTag extends BaseEntity {
     /** 排序号 */
     private Integer sortOrder;
 
-    /** 状态：0停用 1启用 */
+    /** 状态：0正常 1停用 */
     private Integer status;
 }

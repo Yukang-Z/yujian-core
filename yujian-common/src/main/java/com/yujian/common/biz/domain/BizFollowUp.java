@@ -47,7 +47,7 @@ public class BizFollowUp extends BaseEntity {
     /** 回访类型 */
     private String followType;
 
-    /** 回访状态 */
+    /** 回访状态：0待回访 1已完成 2已取消 */
     private Integer followStatus;
 
     /** 回访内容 */
