@@ -24,7 +24,7 @@ import java.util.Date;
 import java.util.List;
 
 /**
- * 员工日程接口（按当前所选诊所隔离）
+ * 员工日程管理接口，支持按时间范围查询与增删改；按当前所选诊所隔离。
  *
  * @author Zhangyk
  * @date 2026-08-14 16:50
@@ -38,13 +38,13 @@ public class BizScheduleController {
     private BizScheduleMapper scheduleMapper;
 
     /**
-     * 日程列表
+     * 按时间范围查询当前诊所员工日程列表；按当前所选诊所隔离。
      *
-     * @param clinicId  忽略
-     * @param doctorId  医生/员工
+     * @param clinicId  诊所ID（前端传入将被忽略，以当前所选诊所为准）
+     * @param doctorId  医生/员工ID，可选，用于筛选指定人员日程
      * @param beginTime 开始时间，必填
      * @param endTime   结束时间，必填
-     * @return 日程列表
+     * @return 统一响应，data 为 {@link BizSchedule} 列表，按开始时间升序排列
      */
     @ApiOperation("日程列表")
     @GetMapping("/list")
@@ -66,10 +66,10 @@ public class BizScheduleController {
     }
 
     /**
-     * 新增日程
+     * 新增员工日程，未传 clinicId 时自动写入当前所选诊所；按当前所选诊所隔离。
      *
-     * @param schedule 日程（title、startTime、endTime 必填）
-     * @return 操作结果
+     * @param schedule 日程信息（title、startTime、endTime 必填）
+     * @return 统一响应，成功时 data 为空，失败时含错误提示
      */
     @ApiOperation("新增日程")
     @PostMapping
@@ -90,10 +90,10 @@ public class BizScheduleController {
     }
 
     /**
-     * 修改日程
+     * 修改员工日程信息；按当前所选诊所隔离。
      *
-     * @param schedule 日程（须含 id）
-     * @return 操作结果
+     * @param schedule 日程信息（须含 id）
+     * @return 统一响应，成功时 data 为空，失败时含错误提示
      */
     @ApiOperation("修改日程")
     @PostMapping("/edit")
@@ -102,10 +102,10 @@ public class BizScheduleController {
     }
 
     /**
-     * 删除日程
+     * 删除指定员工日程；按当前所选诊所隔离。
      *
      * @param id 日程ID
-     * @return 操作结果
+     * @return 统一响应，成功时 data 为空，失败时含错误提示
      */
     @ApiOperation("删除日程")
     @PostMapping("/remove/{id}")

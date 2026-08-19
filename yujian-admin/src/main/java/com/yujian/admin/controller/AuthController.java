@@ -36,10 +36,11 @@ import java.util.HashSet;
 import java.util.List;
 
 /**
- * 登录鉴权接口（基于 Sa-Token）
+ * 登录鉴权接口（基于 Sa-Token）。
  * <p>
- * 登录成功后返回可进入诊所列表；需调用 {@code /auth/selectClinic} 选定诊所后，
- * 业务查询按当前诊所隔离。
+ * 提供账号密码登录、诊所切换、当前用户信息查询及退出登录能力。
+ * 登录成功后返回可进入诊所列表；若关联多个诊所，需调用 {@code /auth/selectClinic} 选定诊所后，
+ * 员工/部门等业务查询才按当前诊所隔离。
  * </p>
  *
  * @author Zhangyk
@@ -65,13 +66,15 @@ public class AuthController {
     private SysAuthQueryService authQueryService;
 
     /**
-     * 账号密码登录
+     * 使用账号密码登录并签发 Token。
      * <p>
-     * 返回 token、用户、可进入诊所列表；若仅 1 个诊所则自动选中。
+     * 无需登录（白名单接口）；校验账号状态与密码后写入 Sa-Token Session。
+     * 仅关联 1 个诊所时自动选中，多诊所时需再调 {@code /auth/selectClinic}。
      * </p>
      *
-     * @param body 登录账号与密码
-     * @return token、用户、可进入诊所、是否还需选诊所
+     * @param body 登录请求，含 username（登录账号）、password（明文密码）
+     * @return 统一响应；data 为 {@link LoginVO}，含 token、员工信息（不含密码）、
+     *         可进入诊所列表、是否需要选诊所（needSelectClinic）、当前诊所ID（currentClinicId，单诊所时自动填充）
      */
     @ApiOperation("账号密码登录")
     @PostMapping("/login")
@@ -136,10 +139,13 @@ public class AuthController {
     }
 
     /**
-     * 登录后选择进入的诊所（写入 Session）
+     * 登录后选择当前工作诊所并写入 Session。
+     * <p>
+     * 需已登录；仅能选择当前员工已关联且状态正常的诊所，否则返回业务异常。
+     * </p>
      *
-     * @param body 诊所ID
-     * @return 当前诊所ID与名称
+     * @param body 选诊所请求，含 clinicId（目标诊所ID，必填）
+     * @return 统一响应；data 为 {@link SelectClinicVO}，含 clinicId、clinicName
      */
     @ApiOperation("登录后选择进入的诊所")
     @PostMapping("/selectClinic")
@@ -184,9 +190,12 @@ public class AuthController {
     }
 
     /**
-     * 查询当前账号可进入的诊所列表
+     * 查询当前登录员工可进入的诊所列表。
+     * <p>
+     * 需已登录；按当前 Token 对应员工返回其关联诊所，不限当前已选诊所。
+     * </p>
      *
-     * @return 可进入诊所列表
+     * @return 统一响应；data 为 {@link SysClinic} 列表，含诊所基础信息
      */
     @ApiOperation("查询当前账号可进入的诊所")
     @GetMapping("/clinics")
@@ -196,9 +205,13 @@ public class AuthController {
     }
 
     /**
-     * 获取当前登录用户信息（含角色、菜单、权限、当前诊所）
+     * 获取当前登录用户的完整鉴权信息。
+     * <p>
+     * 需已登录；用于前端初始化菜单、按钮权限及诊所切换展示。
+     * </p>
      *
-     * @return 用户、角色、菜单、权限、诊所及当前诊所
+     * @return 统一响应；data 为 {@link AuthInfoVO}，含员工信息、角色列表、网页端菜单树、
+     *         权限标识列表、可进入诊所、当前诊所ID与名称（Session 中已选诊所）
      */
     @ApiOperation("当前登录用户信息")
     @GetMapping("/info")
@@ -209,9 +222,12 @@ public class AuthController {
     }
 
     /**
-     * 退出登录，注销当前 Token
+     * 退出登录并注销当前 Token。
+     * <p>
+     * 需已登录；调用后当前 Token 失效，需重新登录。
+     * </p>
      *
-     * @return 空成功结果
+     * @return 统一响应；data 为空表示退出成功
      */
     @ApiOperation("退出登录")
     @PostMapping("/logout")
@@ -223,13 +239,13 @@ public class AuthController {
     }
 
     /**
-     * 组装 LoginUser（诊所列表写入 clinicIds，当前诊所可为空）
+     * 组装 LoginUser 对象并写入角色、权限及可进入诊所列表。
      *
-     * @param employee 员工
-     * @param roles    角色列表
-     * @param perms    权限标识列表
-     * @param clinics  可进入诊所
-     * @return 登录用户
+     * @param employee 员工实体
+     * @param roles    员工关联角色列表
+     * @param perms    员工菜单权限标识列表
+     * @param clinics  员工可进入诊所列表
+     * @return 登录用户上下文（当前诊所 clinicId 可为空，待选诊所后写入）
      */
     private LoginUser buildLoginUser(SysEmployee employee, List<SysRole> roles,
                                      List<String> perms, List<SysClinic> clinics) {
@@ -256,10 +272,10 @@ public class AuthController {
     }
 
     /**
-     * 将选定诊所写入 LoginUser
+     * 将选定诊所信息写入 LoginUser 的当前诊所字段。
      *
-     * @param loginUser 登录用户
-     * @param clinic    诊所
+     * @param loginUser 登录用户上下文
+     * @param clinic    目标诊所实体
      */
     private void applyClinic(LoginUser loginUser, SysClinic clinic) {
         loginUser.setClinicId(clinic.getId());
@@ -267,10 +283,10 @@ public class AuthController {
     }
 
     /**
-     * 构建 /auth/info 返回结构
+     * 构建 {@code /auth/info} 接口的返回数据。
      *
-     * @param employeeId 员工ID
-     * @return 用户信息
+     * @param employeeId 当前登录员工ID
+     * @return 鉴权信息聚合对象，含用户、角色、菜单、权限及诊所上下文
      */
     private AuthInfoVO buildInfoResult(long employeeId) {
         SysEmployee employee = employeeMapper.selectById(employeeId);

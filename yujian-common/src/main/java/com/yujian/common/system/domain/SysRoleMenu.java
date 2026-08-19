@@ -8,7 +8,8 @@ import lombok.Data;
 import java.io.Serializable;
 
 /**
- * 角色-菜单关联，对应表 t_role_menu
+ * 角色-菜单关联实体，映射表 t_role_menu；
+ * 作为角色授权（分配菜单）接口的内部关联数据载体。
  *
  * @author Zhangyk
  * @date 2026-08-14 16:50
@@ -19,7 +20,7 @@ public class SysRoleMenu implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    /** 主键 */
+    /** 主键ID */
     @TableId(type = IdType.AUTO)
     private Long id;
 

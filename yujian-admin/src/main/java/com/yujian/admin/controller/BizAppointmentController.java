@@ -27,7 +27,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * 预约管理接口（按当前所选诊所隔离）
+ * 预约管理接口，提供列表、日历、状态流转及回收站能力；按当前所选诊所隔离。
  *
  * @author Zhangyk
  * @date 2026-08-14 16:50
@@ -41,20 +41,20 @@ public class BizAppointmentController {
     private IBizAppointmentService appointmentService;
 
     /**
-     * 预约分页列表
+     * 分页查询预约列表，支持多条件筛选；按当前所选诊所隔离。
      *
-     * @param keyword       患者姓名/手机/病历号
-     * @param clinicId      忽略
-     * @param doctorId      医生
-     * @param consultantId  咨询师
-     * @param visitType     1初诊 2复诊
-     * @param status        预约状态
-     * @param appointSource 来源
-     * @param beginTime     开始时间
-     * @param endTime       结束时间
-     * @param pageNum       页码
-     * @param pageSize      每页条数
-     * @return 分页数据
+     * @param keyword       患者姓名/手机/病历号关键字，可选
+     * @param clinicId      诊所ID（前端传入将被忽略，以当前所选诊所为准）
+     * @param doctorId      医生ID，可选
+     * @param consultantId  咨询师ID，可选
+     * @param visitType     就诊类型：1 初诊 / 2 复诊，可选
+     * @param status        预约状态，可选
+     * @param appointSource 预约来源，可选
+     * @param beginTime     预约开始时间，可选
+     * @param endTime       预约结束时间，可选
+     * @param pageNum       页码，默认 1
+     * @param pageSize      每页条数，默认 20
+     * @return 统一响应，data 为分页结果（records 为 {@link BizAppointment} 列表、total 为总条数）
      */
     @ApiOperation("预约分页列表")
     @GetMapping("/list")
@@ -77,14 +77,14 @@ public class BizAppointmentController {
     }
 
     /**
-     * 周/月日历扁平列表
+     * 查询周/月日历视图的预约扁平列表；按当前所选诊所隔离。
      *
-     * @param clinicId  忽略
-     * @param beginTime 开始时间，必填
-     * @param endTime   结束时间，必填
-     * @param doctorId  医生
-     * @param status    多状态逗号分隔
-     * @return 预约列表
+     * @param clinicId  诊所ID（前端传入将被忽略，以当前所选诊所为准）
+     * @param beginTime 时间范围开始，必填
+     * @param endTime   时间范围结束，必填
+     * @param doctorId  医生ID，可选
+     * @param status    预约状态，多个以逗号分隔，可选
+     * @return 统一响应，data 为 {@link BizAppointment} 列表
      */
     @ApiOperation("预约日历")
     @GetMapping("/calendar")
@@ -100,12 +100,12 @@ public class BizAppointmentController {
     }
 
     /**
-     * 天视图：按医生分列
+     * 查询指定日期的预约天视图，按医生分列展示；按当前所选诊所隔离。
      *
-     * @param clinicId 忽略
-     * @param day      日期 yyyy-MM-dd
-     * @param status   多状态逗号分隔
-     * @return day / columns / total
+     * @param clinicId 诊所ID（前端传入将被忽略，以当前所选诊所为准）
+     * @param day      日期，格式 yyyy-MM-dd，必填
+     * @param status   预约状态，多个以逗号分隔，可选
+     * @return 统一响应，data 为 Map：day 为日期，columns 为按医生分列的预约数据，total 为总数
      */
     @ApiOperation("预约天视图")
     @GetMapping("/dayGrid")
@@ -118,13 +118,13 @@ public class BizAppointmentController {
     }
 
     /**
-     * 状态筛选计数
+     * 统计各预约状态的数量，用于筛选栏计数；按当前所选诊所隔离。
      *
-     * @param clinicId  忽略
-     * @param beginTime 开始
-     * @param endTime   结束
-     * @param doctorId  医生
-     * @return 各状态数量
+     * @param clinicId  诊所ID（前端传入将被忽略，以当前所选诊所为准）
+     * @param beginTime 统计开始时间，可选
+     * @param endTime   统计结束时间，可选
+     * @param doctorId  医生ID，可选
+     * @return 统一响应，data 为 Map，键为状态码、值为对应数量
      */
     @ApiOperation("预约状态计数")
     @GetMapping("/stats/statusCount")
@@ -139,10 +139,10 @@ public class BizAppointmentController {
     }
 
     /**
-     * 今日预约统计卡片
+     * 查询今日预约统计卡片数据；按当前所选诊所隔离。
      *
-     * @param clinicId 忽略
-     * @return 今日统计
+     * @param clinicId 诊所ID（前端传入将被忽略，以当前所选诊所为准）
+     * @return 统一响应，data 为 Map，含今日各状态预约数量等统计指标
      */
     @ApiOperation("今日预约统计")
     @GetMapping("/stats/today")
@@ -151,10 +151,10 @@ public class BizAppointmentController {
     }
 
     /**
-     * 预约详情
+     * 查询预约详情；按当前所选诊所隔离。
      *
      * @param id 预约ID
-     * @return 预约
+     * @return 统一响应，data 为 {@link BizAppointment} 实体
      */
     @ApiOperation("预约详情")
     @GetMapping("/{id}")
@@ -163,10 +163,10 @@ public class BizAppointmentController {
     }
 
     /**
-     * 新增预约
+     * 新增预约，clinicId 由后端自动写入当前所选诊所；按当前所选诊所隔离。
      *
      * @param appointment 预约信息
-     * @return 操作结果
+     * @return 统一响应，成功时 data 为空，失败时含错误提示
      */
     @ApiOperation("新增预约")
     @PostMapping
@@ -175,10 +175,10 @@ public class BizAppointmentController {
     }
 
     /**
-     * 修改预约
+     * 修改预约信息；按当前所选诊所隔离。
      *
      * @param appointment 预约信息（须含 id）
-     * @return 操作结果
+     * @return 统一响应，成功时 data 为空，失败时含错误提示
      */
     @ApiOperation("修改预约")
     @PostMapping("/edit")
@@ -187,11 +187,11 @@ public class BizAppointmentController {
     }
 
     /**
-     * 软删除进回收站
+     * 将预约软删除并移入回收站；按当前所选诊所隔离。
      *
      * @param id           预约ID
-     * @param cancelReason 原因
-     * @return 操作结果
+     * @param cancelReason 取消/删除原因，可选
+     * @return 统一响应，成功时 data 为空，失败时含错误提示
      */
     @ApiOperation("预约进回收站")
     @PostMapping("/remove/{id}")
@@ -201,10 +201,10 @@ public class BizAppointmentController {
     }
 
     /**
-     * 更新预约状态
+     * 更新预约状态并记录备注；按当前所选诊所隔离。
      *
-     * @param body 预约ID、状态、备注
-     * @return 操作结果
+     * @param body 请求体，含预约 id、目标 status 及 remark
+     * @return 统一响应，成功时 data 为空，失败时含错误提示
      */
     @ApiOperation("更新预约状态")
     @PostMapping("/status")
@@ -214,10 +214,10 @@ public class BizAppointmentController {
     }
 
     /**
-     * 确认预约
+     * 确认预约，将状态更新为已确认；按当前所选诊所隔离。
      *
      * @param id 预约ID
-     * @return 操作结果
+     * @return 统一响应，成功时 data 为空，失败时含错误提示
      */
     @ApiOperation("确认预约")
     @PostMapping("/confirm/{id}")
@@ -226,10 +226,10 @@ public class BizAppointmentController {
     }
 
     /**
-     * 取消预约（状态=已流失）
+     * 取消预约，将状态更新为已流失；按当前所选诊所隔离。
      *
-     * @param body 预约ID与取消原因
-     * @return 操作结果
+     * @param body 请求体，含预约 id 与 cancelReason
+     * @return 统一响应，成功时 data 为空，失败时含错误提示
      */
     @ApiOperation("取消预约")
     @PostMapping("/cancel")
@@ -238,10 +238,10 @@ public class BizAppointmentController {
     }
 
     /**
-     * 患者入座
+     * 患者入座，将预约状态更新为已到诊；按当前所选诊所隔离。
      *
      * @param id 预约ID
-     * @return 操作结果
+     * @return 统一响应，成功时 data 为空，失败时含错误提示
      */
     @ApiOperation("患者入座")
     @PostMapping("/seat/{id}")
@@ -250,10 +250,10 @@ public class BizAppointmentController {
     }
 
     /**
-     * 预约操作日志
+     * 查询指定预约的操作日志；按当前所选诊所隔离。
      *
      * @param id 预约ID
-     * @return 日志列表
+     * @return 统一响应，data 为 {@link BizAppointmentLog} 列表
      */
     @ApiOperation("预约操作日志")
     @GetMapping("/{id}/logs")
@@ -262,17 +262,17 @@ public class BizAppointmentController {
     }
 
     /**
-     * 回收站分页
+     * 分页查询回收站中的已删除预约；按当前所选诊所隔离。
      *
-     * @param keyword      关键字
-     * @param clinicId     忽略
-     * @param doctorId     医生
-     * @param consultantId 咨询师
-     * @param beginTime    开始
-     * @param endTime      结束
-     * @param pageNum      页码
-     * @param pageSize     每页条数
-     * @return 分页数据
+     * @param keyword      患者姓名/手机/病历号关键字，可选
+     * @param clinicId     诊所ID（前端传入将被忽略，以当前所选诊所为准）
+     * @param doctorId     医生ID，可选
+     * @param consultantId 咨询师ID，可选
+     * @param beginTime    预约开始时间，可选
+     * @param endTime      预约结束时间，可选
+     * @param pageNum      页码，默认 1
+     * @param pageSize     每页条数，默认 20
+     * @return 统一响应，data 为分页结果（records 为 {@link BizAppointment} 列表、total 为总条数）
      */
     @ApiOperation("预约回收站")
     @GetMapping("/recycle/list")
@@ -292,10 +292,10 @@ public class BizAppointmentController {
     }
 
     /**
-     * 回收站还原
+     * 从回收站还原已删除的预约；按当前所选诊所隔离。
      *
      * @param id 预约ID
-     * @return 操作结果
+     * @return 统一响应，成功时 data 为空，失败时含错误提示
      */
     @ApiOperation("还原预约")
     @PostMapping("/recycle/restore/{id}")
@@ -304,10 +304,10 @@ public class BizAppointmentController {
     }
 
     /**
-     * 回收站彻底删除
+     * 从回收站彻底删除预约，不可恢复；按当前所选诊所隔离。
      *
      * @param id 预约ID
-     * @return 操作结果
+     * @return 统一响应，成功时 data 为空，失败时含错误提示
      */
     @ApiOperation("彻底删除预约")
     @PostMapping("/recycle/remove/{id}")
@@ -316,10 +316,10 @@ public class BizAppointmentController {
     }
 
     /**
-     * 将逗号分隔状态字符串转为列表
+     * 将逗号分隔的预约状态字符串解析为整数列表。
      *
-     * @param status 如 1,2,3
-     * @return 状态列表，空则 null
+     * @param status 状态字符串，如 "1,2,3"
+     * @return 状态整数列表；入参为空或空白时返回 null
      */
     private List<Integer> parseStatus(String status) {
         if (status == null || status.trim().isEmpty()) {

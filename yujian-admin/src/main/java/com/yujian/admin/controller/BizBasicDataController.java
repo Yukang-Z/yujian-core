@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 /**
- * 基础数据接口（字典、标签、来源、项目、医生列）
+ * 基础数据管理接口，涵盖字典、患者标签、来源、诊疗项目及医生列表；诊所级数据按当前所选诊所隔离。
  *
  * @author Zhangyk
  * @date 2026-08-14 16:50
@@ -36,9 +36,9 @@ public class BizBasicDataController {
     private IBizBasicDataService basicDataService;
 
     /**
-     * 字典类型列表
+     * 查询全部字典类型列表（全局数据，不按诊所隔离）。
      *
-     * @return 字典类型
+     * @return 统一响应，data 为 {@link BizDictType} 列表
      */
     @ApiOperation("字典类型列表")
     @GetMapping("/dict/types")
@@ -47,10 +47,10 @@ public class BizBasicDataController {
     }
 
     /**
-     * 按类型查询字典数据
+     * 按类型编码查询字典数据项（全局数据，不按诊所隔离）。
      *
-     * @param dictType 类型编码，如 appoint_status
-     * @return 字典项
+     * @param dictType 字典类型编码，如 appoint_status
+     * @return 统一响应，data 为 {@link BizDictData} 列表
      */
     @ApiOperation("字典数据")
     @GetMapping("/dict/{dictType}")
@@ -60,10 +60,10 @@ public class BizBasicDataController {
     }
 
     /**
-     * 新增或修改字典项
+     * 新增或修改字典数据项（全局数据，不按诊所隔离）。
      *
-     * @param data 字典项
-     * @return 操作结果
+     * @param data 字典数据项（新增时 id 为空，修改时须含 id）
+     * @return 统一响应，成功时 data 为空，失败时含错误提示
      */
     @ApiOperation("保存字典数据")
     @PostMapping("/dict/data")
@@ -72,10 +72,10 @@ public class BizBasicDataController {
     }
 
     /**
-     * 删除字典项
+     * 删除指定字典数据项（全局数据，不按诊所隔离）。
      *
      * @param id 字典项ID
-     * @return 操作结果
+     * @return 统一响应，成功时 data 为空，失败时含错误提示
      */
     @ApiOperation("删除字典数据")
     @PostMapping("/dict/data/remove/{id}")
@@ -84,10 +84,10 @@ public class BizBasicDataController {
     }
 
     /**
-     * 当前诊所患者标签
+     * 查询当前诊所患者标签列表；按当前所选诊所隔离。
      *
-     * @param clinicId 忽略
-     * @return 标签列表
+     * @param clinicId 诊所ID（前端传入将被忽略，以当前所选诊所为准）
+     * @return 统一响应，data 为 {@link BizPatientTag} 列表
      */
     @ApiOperation("患者标签列表")
     @GetMapping("/tag/list")
@@ -96,10 +96,10 @@ public class BizBasicDataController {
     }
 
     /**
-     * 保存患者标签
+     * 新增或修改患者标签；按当前所选诊所隔离。
      *
-     * @param tag 标签
-     * @return 操作结果
+     * @param tag 标签信息（新增时 id 为空，修改时须含 id）
+     * @return 统一响应，成功时 data 为空，失败时含错误提示
      */
     @ApiOperation("保存患者标签")
     @PostMapping("/tag")
@@ -108,10 +108,10 @@ public class BizBasicDataController {
     }
 
     /**
-     * 删除患者标签
+     * 删除指定患者标签；按当前所选诊所隔离。
      *
      * @param id 标签ID
-     * @return 操作结果
+     * @return 统一响应，成功时 data 为空，失败时含错误提示
      */
     @ApiOperation("删除患者标签")
     @PostMapping("/tag/remove/{id}")
@@ -120,10 +120,10 @@ public class BizBasicDataController {
     }
 
     /**
-     * 患者来源树
+     * 查询当前诊所患者来源树形结构；按当前所选诊所隔离。
      *
-     * @param clinicId 忽略
-     * @return 来源树
+     * @param clinicId 诊所ID（前端传入将被忽略，以当前所选诊所为准）
+     * @return 统一响应，data 为 {@link BizPatientSource} 树形列表
      */
     @ApiOperation("患者来源树")
     @GetMapping("/source/tree")
@@ -133,10 +133,10 @@ public class BizBasicDataController {
     }
 
     /**
-     * 保存患者来源
+     * 新增或修改患者来源；按当前所选诊所隔离。
      *
-     * @param source 来源
-     * @return 操作结果
+     * @param source 来源信息（新增时 id 为空，修改时须含 id）
+     * @return 统一响应，成功时 data 为空，失败时含错误提示
      */
     @ApiOperation("保存患者来源")
     @PostMapping("/source")
@@ -145,10 +145,10 @@ public class BizBasicDataController {
     }
 
     /**
-     * 删除患者来源
+     * 删除指定患者来源；按当前所选诊所隔离。
      *
      * @param id 来源ID
-     * @return 操作结果
+     * @return 统一响应，成功时 data 为空，失败时含错误提示
      */
     @ApiOperation("删除患者来源")
     @PostMapping("/source/remove/{id}")
@@ -157,10 +157,10 @@ public class BizBasicDataController {
     }
 
     /**
-     * 诊疗项目列表
+     * 查询当前诊所诊疗项目列表；按当前所选诊所隔离。
      *
-     * @param clinicId 忽略
-     * @return 项目列表
+     * @param clinicId 诊所ID（前端传入将被忽略，以当前所选诊所为准）
+     * @return 统一响应，data 为 {@link BizTreatItem} 列表
      */
     @ApiOperation("诊疗项目列表")
     @GetMapping("/item/list")
@@ -169,10 +169,10 @@ public class BizBasicDataController {
     }
 
     /**
-     * 保存诊疗项目
+     * 新增或修改诊疗项目；按当前所选诊所隔离。
      *
-     * @param item 项目
-     * @return 操作结果
+     * @param item 诊疗项目信息（新增时 id 为空，修改时须含 id）
+     * @return 统一响应，成功时 data 为空，失败时含错误提示
      */
     @ApiOperation("保存诊疗项目")
     @PostMapping("/item")
@@ -181,10 +181,10 @@ public class BizBasicDataController {
     }
 
     /**
-     * 删除诊疗项目
+     * 删除指定诊疗项目；按当前所选诊所隔离。
      *
      * @param id 项目ID
-     * @return 操作结果
+     * @return 统一响应，成功时 data 为空，失败时含错误提示
      */
     @ApiOperation("删除诊疗项目")
     @PostMapping("/item/remove/{id}")
@@ -193,10 +193,10 @@ public class BizBasicDataController {
     }
 
     /**
-     * 当前诊所医生列表（日历列）
+     * 查询当前诊所医生列表，供预约日历等场景作为列头使用；按当前所选诊所隔离。
      *
-     * @param clinicId 忽略
-     * @return 医生列表
+     * @param clinicId 诊所ID（前端传入将被忽略，以当前所选诊所为准）
+     * @return 统一响应，data 为医生信息列表（Map 或 VO 结构，含 id、姓名等字段）
      */
     @ApiOperation("医生列表")
     @GetMapping("/doctor/list")

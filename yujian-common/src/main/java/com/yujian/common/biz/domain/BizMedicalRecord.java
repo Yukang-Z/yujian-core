@@ -12,7 +12,8 @@ import lombok.EqualsAndHashCode;
 import java.util.Date;
 
 /**
- * 病历实体，对应表 t_medical_record
+ * 电子病历实体，对应表 t_medical_record。
+ * 用于业务接口请求/响应数据传输（病历书写、查询、打印等场景）。
  *
  * @author Zhangyk
  * @date 2026-08-14 16:50
@@ -27,16 +28,16 @@ public class BizMedicalRecord extends BaseEntity {
     @TableId(type = IdType.AUTO)
     private Long id;
 
-    /** 诊所ID */
+    /** 诊所ID，关联 t_clinic.id */
     private Long clinicId;
 
-    /** 患者ID */
+    /** 患者ID，关联 t_patient.id */
     private Long patientId;
 
-    /** 关联就诊ID */
+    /** 关联就诊ID，关联 t_visit.id */
     private Long visitId;
 
-    /** 医生ID */
+    /** 医生ID，关联 t_employee.id */
     private Long doctorId;
 
     /** 就诊类型：1初诊 2复诊 */
@@ -55,7 +56,7 @@ public class BizMedicalRecord extends BaseEntity {
     /** 医嘱 */
     private String advice;
 
-    /** 医生姓名（非表字段） */
+    /** 医生姓名（非表字段，列表/详情回显） */
     @TableField(exist = false)
     private String doctorName;
 }

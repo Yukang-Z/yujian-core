@@ -8,8 +8,9 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * 统一分页返回结构
+ * 统一分页返回结构，作为列表查询接口的回参（总条数、分页参数及当前页数据）。
  *
+ * @param <T> 当前页记录类型
  * @author Zhangyk
  * @date 2026-08-14 16:50
  */
@@ -18,16 +19,16 @@ public class PageResult<T> implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    /** 总记录数 */
+    /** 符合条件的总记录数（全量计数，非当前页条数） */
     private long total;
 
-    /** 当前页码 */
+    /** 当前页码，从 1 开始 */
     private long pageNum;
 
-    /** 每页条数 */
+    /** 每页条数（pageSize） */
     private long pageSize;
 
-    /** 当前页数据 */
+    /** 当前页数据列表，无数据时为空列表 */
     private List<T> records;
 
     /**

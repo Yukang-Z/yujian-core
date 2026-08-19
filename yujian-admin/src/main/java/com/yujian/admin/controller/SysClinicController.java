@@ -18,7 +18,11 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 /**
- * 诊所管理接口
+ * 诊所管理接口。
+ * <p>
+ * 提供诊所的增删改查及树形数据查询，为全局维度的诊所维护，不按当前所选诊所隔离。
+ * 需已登录；前端按钮权限分别对应 system:clinic:query/add/edit/remove。
+ * </p>
  *
  * @author Zhangyk
  * @date 2026-08-14 16:50
@@ -32,10 +36,10 @@ public class SysClinicController {
     private ISysClinicService clinicService;
 
     /**
-     * 诊所列表（支持名称/编码/状态筛选）
+     * 按条件查询诊所扁平列表。
      *
-     * @param clinic 筛选条件
-     * @return 诊所列表
+     * @param clinic 筛选条件，支持 clinicName（名称）、clinicCode（编码）、status（0正常 1停用）等字段
+     * @return 统一响应；data 为 {@link SysClinic} 列表，按 sortOrder 排序
      */
     @ApiOperation("诊所列表")
     @GetMapping("/list")
@@ -44,10 +48,10 @@ public class SysClinicController {
     }
 
     /**
-     * 诊所树数据（含 parentId，前端组装树）
+     * 查询诊所树形数据（扁平返回，含 parentId，由前端组装树）。
      *
-     * @param clinic 筛选条件
-     * @return 诊所列表
+     * @param clinic 筛选条件，支持 clinicName、clinicCode、status 等字段
+     * @return 统一响应；data 为 {@link SysClinic} 列表，含 parentId 供前端构建树
      */
     @ApiOperation("诊所树数据")
     @GetMapping("/tree")
@@ -56,10 +60,10 @@ public class SysClinicController {
     }
 
     /**
-     * 诊所详情
+     * 根据主键查询诊所详情。
      *
      * @param id 诊所ID
-     * @return 诊所
+     * @return 统一响应；data 为 {@link SysClinic} 实体，含诊所完整信息
      */
     @ApiOperation("诊所详情")
     @GetMapping("/{id}")
@@ -68,10 +72,10 @@ public class SysClinicController {
     }
 
     /**
-     * 新增诊所
+     * 新增诊所。
      *
-     * @param clinic 诊所信息
-     * @return 操作结果
+     * @param clinic 诊所信息，含 clinicName、clinicCode、parentId 等必填/选填字段
+     * @return 统一响应；data 为空，code=200 表示新增成功
      */
     @ApiOperation("新增诊所")
     @PostMapping
@@ -80,10 +84,10 @@ public class SysClinicController {
     }
 
     /**
-     * 修改诊所
+     * 修改诊所信息。
      *
-     * @param clinic 诊所信息（须含 id）
-     * @return 操作结果
+     * @param clinic 诊所信息，id 必填，其余为待更新字段
+     * @return 统一响应；data 为空，code=200 表示修改成功
      */
     @ApiOperation("修改诊所")
     @PostMapping("/edit")
@@ -92,10 +96,10 @@ public class SysClinicController {
     }
 
     /**
-     * 删除诊所
+     * 根据主键删除诊所。
      *
      * @param id 诊所ID
-     * @return 操作结果
+     * @return 统一响应；data 为空，code=200 表示删除成功
      */
     @ApiOperation("删除诊所")
     @PostMapping("/remove/{id}")

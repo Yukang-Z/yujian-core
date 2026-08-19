@@ -20,7 +20,7 @@ import java.util.Date;
 import java.util.List;
 
 /**
- * 患者详情各 Tab：病历 / 处置 / 收费 / 回访 / 影像文档 / 计划 / 咨询 / 亲友 / 日志 / 就诊
+ * 患者详情各 Tab 接口，涵盖病历、处置、收费、回访、影像文档、计划、咨询、亲友、日志及就诊；按当前所选诊所隔离。
  *
  * @author Zhangyk
  * @date 2026-08-14 16:50
@@ -56,10 +56,10 @@ public class BizPatientTabController {
     private PatientLogHelper patientLogHelper;
 
     /**
-     * 查询患者亲友关系列表
+     * 查询指定患者的亲友关系列表；按当前所选诊所隔离。
      *
      * @param patientId 患者ID
-     * @return 亲友关系列表
+     * @return 统一响应，data 为 {@link BizPatientRelation} 列表
      */
     @ApiOperation("亲友关系列表")
     @GetMapping("/{patientId}/relations")
@@ -69,11 +69,11 @@ public class BizPatientTabController {
     }
 
     /**
-     * 新增亲友关系
+     * 新增亲友关系，未传 clinicId 时自动写入当前所选诊所；按当前所选诊所隔离。
      *
      * @param patientId 患者ID
-     * @param relation  关系（relatedId、relationType 必填）
-     * @return 操作结果
+     * @param relation  亲友关系信息（relatedId、relationType 必填）
+     * @return 统一响应，成功时 data 为空，失败时含错误提示
      */
     @ApiOperation("新增亲友关系")
     @PostMapping("/{patientId}/relations")
@@ -96,10 +96,10 @@ public class BizPatientTabController {
     }
 
     /**
-     * 删除亲友关系
+     * 删除指定亲友关系；按当前所选诊所隔离。
      *
-     * @param id 关系ID
-     * @return 操作结果
+     * @param id 亲友关系ID
+     * @return 统一响应，成功时 data 为空，失败时含错误提示
      */
     @ApiOperation("删除亲友关系")
     @PostMapping("/relations/remove/{id}")
@@ -108,10 +108,10 @@ public class BizPatientTabController {
     }
 
     /**
-     * 查询患者操作日志
+     * 查询指定患者的操作日志，按时间倒序；按当前所选诊所隔离。
      *
      * @param patientId 患者ID
-     * @return 操作日志列表
+     * @return 统一响应，data 为 {@link BizPatientLog} 列表
      */
     @ApiOperation("患者操作日志")
     @GetMapping("/{patientId}/logs")
@@ -123,10 +123,10 @@ public class BizPatientTabController {
     }
 
     /**
-     * 查询就诊记录列表
+     * 查询指定患者的就诊记录列表，按开始时间倒序；按当前所选诊所隔离。
      *
      * @param patientId 患者ID
-     * @return 就诊记录
+     * @return 统一响应，data 为 {@link BizVisit} 列表
      */
     @ApiOperation("就诊记录列表")
     @GetMapping("/{patientId}/visits")
@@ -138,11 +138,11 @@ public class BizPatientTabController {
     }
 
     /**
-     * 新增就诊记录
+     * 新增就诊记录，未传 clinicId 时自动写入当前所选诊所；按当前所选诊所隔离。
      *
      * @param patientId 患者ID
      * @param visit     就诊信息
-     * @return 操作结果
+     * @return 统一响应，成功时 data 为空，失败时含错误提示
      */
     @ApiOperation("新增就诊记录")
     @PostMapping("/{patientId}/visits")
@@ -166,10 +166,10 @@ public class BizPatientTabController {
     }
 
     /**
-     * 修改就诊记录
+     * 修改就诊记录信息；按当前所选诊所隔离。
      *
      * @param visit 就诊信息（须含 id）
-     * @return 操作结果
+     * @return 统一响应，成功时 data 为空，失败时含错误提示
      */
     @ApiOperation("修改就诊记录")
     @PostMapping("/visits/edit")
@@ -178,13 +178,13 @@ public class BizPatientTabController {
     }
 
     /**
-     * 查询电子病历列表
+     * 查询指定患者的电子病历列表，支持按就诊类型与时间范围过滤；按当前所选诊所隔离。
      *
      * @param patientId 患者ID
-     * @param visitType 就诊类型：1初诊 2复诊
-     * @param beginTime 就诊时间起
-     * @param endTime   就诊时间止
-     * @return 病历列表
+     * @param visitType 就诊类型：1 初诊 / 2 复诊，可选
+     * @param beginTime 就诊时间起，可选
+     * @param endTime   就诊时间止，可选
+     * @return 统一响应，data 为 {@link BizMedicalRecord} 列表
      */
     @ApiOperation("电子病历列表")
     @GetMapping("/{patientId}/medicalRecords")
@@ -204,11 +204,11 @@ public class BizPatientTabController {
     }
 
     /**
-     * 新增电子病历
+     * 新增电子病历，未传 clinicId 时自动写入当前所选诊所；按当前所选诊所隔离。
      *
      * @param patientId 患者ID
      * @param record    病历内容
-     * @return 操作结果
+     * @return 统一响应，成功时 data 为空，失败时含错误提示
      */
     @ApiOperation("新增电子病历")
     @PostMapping("/{patientId}/medicalRecords")
@@ -226,10 +226,10 @@ public class BizPatientTabController {
     }
 
     /**
-     * 修改电子病历
+     * 修改电子病历内容；按当前所选诊所隔离。
      *
-     * @param record 病历（须含 id）
-     * @return 操作结果
+     * @param record 病历信息（须含 id）
+     * @return 统一响应，成功时 data 为空，失败时含错误提示
      */
     @ApiOperation("修改电子病历")
     @PostMapping("/medicalRecords/edit")
@@ -242,10 +242,10 @@ public class BizPatientTabController {
     }
 
     /**
-     * 删除电子病历
+     * 删除指定电子病历；按当前所选诊所隔离。
      *
      * @param id 病历ID
-     * @return 操作结果
+     * @return 统一响应，成功时 data 为空，失败时含错误提示
      */
     @ApiOperation("删除电子病历")
     @PostMapping("/medicalRecords/remove/{id}")
@@ -254,10 +254,10 @@ public class BizPatientTabController {
     }
 
     /**
-     * 查询处置记录列表
+     * 查询指定患者的处置记录列表，按处置时间倒序；按当前所选诊所隔离。
      *
      * @param patientId 患者ID
-     * @return 处置记录
+     * @return 统一响应，data 为 {@link BizTreatmentRecord} 列表
      */
     @ApiOperation("处置记录列表")
     @GetMapping("/{patientId}/treatments")
@@ -269,11 +269,11 @@ public class BizPatientTabController {
     }
 
     /**
-     * 新增处置记录
+     * 新增处置记录，未传 clinicId 时自动写入当前所选诊所；按当前所选诊所隔离。
      *
      * @param patientId 患者ID
      * @param record    处置信息
-     * @return 操作结果
+     * @return 统一响应，成功时 data 为空，失败时含错误提示
      */
     @ApiOperation("新增处置记录")
     @PostMapping("/{patientId}/treatments")
@@ -292,10 +292,10 @@ public class BizPatientTabController {
     }
 
     /**
-     * 修改处置记录
+     * 修改处置记录信息；按当前所选诊所隔离。
      *
      * @param record 处置信息（须含 id）
-     * @return 操作结果
+     * @return 统一响应，成功时 data 为空，失败时含错误提示
      */
     @ApiOperation("修改处置记录")
     @PostMapping("/treatments/edit")
@@ -304,10 +304,10 @@ public class BizPatientTabController {
     }
 
     /**
-     * 删除处置记录
+     * 删除指定处置记录；按当前所选诊所隔离。
      *
      * @param id 处置记录ID
-     * @return 操作结果
+     * @return 统一响应，成功时 data 为空，失败时含错误提示
      */
     @ApiOperation("删除处置记录")
     @PostMapping("/treatments/remove/{id}")
@@ -316,10 +316,10 @@ public class BizPatientTabController {
     }
 
     /**
-     * 查询收费记录列表
+     * 查询指定患者的收费记录列表，按收费时间倒序；按当前所选诊所隔离。
      *
      * @param patientId 患者ID
-     * @return 收费记录
+     * @return 统一响应，data 为 {@link BizChargeRecord} 列表
      */
     @ApiOperation("收费记录列表")
     @GetMapping("/{patientId}/charges")
@@ -331,11 +331,11 @@ public class BizPatientTabController {
     }
 
     /**
-     * 新增收费记录，并回写患者累计金额
+     * 新增收费记录并回写患者累计消费金额，未传 clinicId 时自动写入当前所选诊所；按当前所选诊所隔离。
      *
      * @param patientId 患者ID
      * @param record    收费信息
-     * @return 操作结果
+     * @return 统一响应，成功时 data 为空，失败时含错误提示
      */
     @ApiOperation("新增收费记录")
     @PostMapping("/{patientId}/charges")
@@ -370,10 +370,10 @@ public class BizPatientTabController {
     }
 
     /**
-     * 修改收费记录，并回写患者累计金额
+     * 修改收费记录并回写患者累计消费金额；按当前所选诊所隔离。
      *
      * @param record 收费信息（须含 id）
-     * @return 操作结果
+     * @return 统一响应，成功时 data 为空，失败时含错误提示
      */
     @ApiOperation("修改收费记录")
     @PostMapping("/charges/edit")
@@ -386,10 +386,10 @@ public class BizPatientTabController {
     }
 
     /**
-     * 查询回访列表
+     * 查询指定患者的回访计划列表，按计划时间倒序；按当前所选诊所隔离。
      *
      * @param patientId 患者ID
-     * @return 回访列表
+     * @return 统一响应，data 为 {@link BizFollowUp} 列表
      */
     @ApiOperation("回访列表")
     @GetMapping("/{patientId}/followUps")
@@ -401,11 +401,11 @@ public class BizPatientTabController {
     }
 
     /**
-     * 新增回访
+     * 新增回访计划，未传 clinicId 时自动写入当前所选诊所；按当前所选诊所隔离。
      *
      * @param patientId 患者ID
      * @param followUp  回访信息
-     * @return 操作结果
+     * @return 统一响应，成功时 data 为空，失败时含错误提示
      */
     @ApiOperation("新增回访")
     @PostMapping("/{patientId}/followUps")
@@ -423,10 +423,10 @@ public class BizPatientTabController {
     }
 
     /**
-     * 修改回访
+     * 修改回访计划信息；按当前所选诊所隔离。
      *
      * @param followUp 回访信息（须含 id）
-     * @return 操作结果
+     * @return 统一响应，成功时 data 为空，失败时含错误提示
      */
     @ApiOperation("修改回访")
     @PostMapping("/followUps/edit")
@@ -435,10 +435,10 @@ public class BizPatientTabController {
     }
 
     /**
-     * 删除回访
+     * 删除指定回访计划；按当前所选诊所隔离。
      *
      * @param id 回访ID
-     * @return 操作结果
+     * @return 统一响应，成功时 data 为空，失败时含错误提示
      */
     @ApiOperation("删除回访")
     @PostMapping("/followUps/remove/{id}")
@@ -447,14 +447,14 @@ public class BizPatientTabController {
     }
 
     /**
-     * 查询患者影像/文档/协议
+     * 查询指定患者的影像/文档/协议附件，支持按分类、类型及上传时间过滤；按当前所选诊所隔离。
      *
      * @param patientId    患者ID
-     * @param fileCategory 分类：image / document / agreement
-     * @param fileType     文件类型
-     * @param beginTime    上传时间起
-     * @param endTime      上传时间止
-     * @return 附件列表
+     * @param fileCategory 文件分类：image 图片 / document 文档 / agreement 协议，可选
+     * @param fileType     文件类型，可选
+     * @param beginTime    上传时间起，可选
+     * @param endTime      上传时间止，可选
+     * @return 统一响应，data 为 {@link BizPatientFile} 列表
      */
     @ApiOperation("患者附件列表")
     @GetMapping("/{patientId}/files")
@@ -476,11 +476,11 @@ public class BizPatientTabController {
     }
 
     /**
-     * 新增患者附件
+     * 新增患者附件，未传 clinicId 时自动写入当前所选诊所；按当前所选诊所隔离。
      *
      * @param patientId 患者ID
-     * @param file      附件（fileUrl 必填）
-     * @return 操作结果
+     * @param file      附件信息（fileUrl 必填）
+     * @return 统一响应，成功时 data 为空，失败时含错误提示
      */
     @ApiOperation("新增患者附件")
     @PostMapping("/{patientId}/files")
@@ -506,10 +506,10 @@ public class BizPatientTabController {
     }
 
     /**
-     * 删除患者附件
+     * 删除指定患者附件；按当前所选诊所隔离。
      *
      * @param id 附件ID
-     * @return 操作结果
+     * @return 统一响应，成功时 data 为空，失败时含错误提示
      */
     @ApiOperation("删除患者附件")
     @PostMapping("/files/remove/{id}")
@@ -518,10 +518,10 @@ public class BizPatientTabController {
     }
 
     /**
-     * 查询治疗计划列表
+     * 查询指定患者的治疗计划列表；按当前所选诊所隔离。
      *
      * @param patientId 患者ID
-     * @return 治疗计划
+     * @return 统一响应，data 为 {@link BizTreatPlan} 列表
      */
     @ApiOperation("治疗计划列表")
     @GetMapping("/{patientId}/plans")
@@ -533,11 +533,11 @@ public class BizPatientTabController {
     }
 
     /**
-     * 新增治疗计划
+     * 新增治疗计划，未传 clinicId 时自动写入当前所选诊所；按当前所选诊所隔离。
      *
      * @param patientId 患者ID
-     * @param plan      计划内容
-     * @return 操作结果
+     * @param plan      治疗计划内容
+     * @return 统一响应，成功时 data 为空，失败时含错误提示
      */
     @ApiOperation("新增治疗计划")
     @PostMapping("/{patientId}/plans")
@@ -553,10 +553,10 @@ public class BizPatientTabController {
     }
 
     /**
-     * 修改治疗计划
+     * 修改治疗计划信息；按当前所选诊所隔离。
      *
-     * @param plan 计划（须含 id）
-     * @return 操作结果
+     * @param plan 治疗计划（须含 id）
+     * @return 统一响应，成功时 data 为空，失败时含错误提示
      */
     @ApiOperation("修改治疗计划")
     @PostMapping("/plans/edit")
@@ -565,10 +565,10 @@ public class BizPatientTabController {
     }
 
     /**
-     * 删除治疗计划
+     * 删除指定治疗计划；按当前所选诊所隔离。
      *
-     * @param id 计划ID
-     * @return 操作结果
+     * @param id 治疗计划ID
+     * @return 统一响应，成功时 data 为空，失败时含错误提示
      */
     @ApiOperation("删除治疗计划")
     @PostMapping("/plans/remove/{id}")
@@ -577,10 +577,10 @@ public class BizPatientTabController {
     }
 
     /**
-     * 查询咨询沟通列表
+     * 查询指定患者的咨询沟通记录列表，按咨询时间倒序；按当前所选诊所隔离。
      *
      * @param patientId 患者ID
-     * @return 咨询记录
+     * @return 统一响应，data 为 {@link BizConsultRecord} 列表
      */
     @ApiOperation("咨询沟通列表")
     @GetMapping("/{patientId}/consults")
@@ -592,11 +592,11 @@ public class BizPatientTabController {
     }
 
     /**
-     * 新增咨询沟通
+     * 新增咨询沟通记录，未传 clinicId 时自动写入当前所选诊所；按当前所选诊所隔离。
      *
      * @param patientId 患者ID
      * @param record    咨询内容
-     * @return 操作结果
+     * @return 统一响应，成功时 data 为空，失败时含错误提示
      */
     @ApiOperation("新增咨询沟通")
     @PostMapping("/{patientId}/consults")
@@ -612,10 +612,10 @@ public class BizPatientTabController {
     }
 
     /**
-     * 修改咨询沟通
+     * 修改咨询沟通记录；按当前所选诊所隔离。
      *
      * @param record 咨询记录（须含 id）
-     * @return 操作结果
+     * @return 统一响应，成功时 data 为空，失败时含错误提示
      */
     @ApiOperation("修改咨询沟通")
     @PostMapping("/consults/edit")
@@ -624,9 +624,9 @@ public class BizPatientTabController {
     }
 
     /**
-     * 病历未传诊所时，写入当前所选诊所
+     * 电子病历未传 clinicId 时，自动写入当前所选诊所。
      *
-     * @param r 病历
+     * @param r 电子病历实体
      */
     private void fillClinic(BizMedicalRecord r) {
         if (r.getClinicId() == null) {
@@ -635,9 +635,9 @@ public class BizPatientTabController {
     }
 
     /**
-     * 处置未传诊所时，写入当前所选诊所
+     * 处置记录未传 clinicId 时，自动写入当前所选诊所。
      *
-     * @param r 处置记录
+     * @param r 处置记录实体
      */
     private void fillClinic(BizTreatmentRecord r) {
         if (r.getClinicId() == null) {
@@ -646,9 +646,9 @@ public class BizPatientTabController {
     }
 
     /**
-     * 收费未传诊所时，写入当前所选诊所
+     * 收费记录未传 clinicId 时，自动写入当前所选诊所。
      *
-     * @param r 收费记录
+     * @param r 收费记录实体
      */
     private void fillClinic(BizChargeRecord r) {
         if (r.getClinicId() == null) {
@@ -657,9 +657,9 @@ public class BizPatientTabController {
     }
 
     /**
-     * 回访未传诊所时，写入当前所选诊所
+     * 回访计划未传 clinicId 时，自动写入当前所选诊所。
      *
-     * @param r 回访
+     * @param r 回访实体
      */
     private void fillClinic(BizFollowUp r) {
         if (r.getClinicId() == null) {
@@ -668,9 +668,9 @@ public class BizPatientTabController {
     }
 
     /**
-     * 治疗计划未传诊所时，写入当前所选诊所
+     * 治疗计划未传 clinicId 时，自动写入当前所选诊所。
      *
-     * @param r 治疗计划
+     * @param r 治疗计划实体
      */
     private void fillClinic(BizTreatPlan r) {
         if (r.getClinicId() == null) {
@@ -679,9 +679,9 @@ public class BizPatientTabController {
     }
 
     /**
-     * 咨询未传诊所时，写入当前所选诊所
+     * 咨询记录未传 clinicId 时，自动写入当前所选诊所。
      *
-     * @param r 咨询记录
+     * @param r 咨询记录实体
      */
     private void fillClinic(BizConsultRecord r) {
         if (r.getClinicId() == null) {
@@ -690,11 +690,11 @@ public class BizPatientTabController {
     }
 
     /**
-     * 回写患者最近就诊时间与医生
+     * 回写患者最近就诊时间与主治医生。
      *
      * @param patientId 患者ID
-     * @param doctorId  医生ID
-     * @param time      就诊/处置时间
+     * @param doctorId  医生ID，可为 null
+     * @param time      就诊或处置时间
      */
     private void syncLastVisit(Long patientId, Long doctorId, Date time) {
         BizPatient update = new BizPatient();
@@ -707,7 +707,7 @@ public class BizPatientTabController {
     }
 
     /**
-     * 按收费明细汇总并回写患者消费金额
+     * 按收费明细汇总并回写患者累计消费、已付及欠费金额。
      *
      * @param patientId 患者ID
      */

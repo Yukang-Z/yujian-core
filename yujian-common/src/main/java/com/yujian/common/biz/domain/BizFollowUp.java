@@ -8,11 +8,12 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.yujian.common.core.domain.BaseEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-
 import java.util.Date;
 
+
 /**
- * 随访/回访实体，对应表 t_follow_up
+ * 随访/回访实体，对应表 t_follow_up。
+ * 用于业务接口请求/响应数据传输（回访计划、执行登记、任务列表等场景）。
  *
  * @author Zhangyk
  * @date 2026-08-14 16:50
@@ -27,13 +28,13 @@ public class BizFollowUp extends BaseEntity {
     @TableId(type = IdType.AUTO)
     private Long id;
 
-    /** 诊所ID */
+    /** 诊所ID，关联 t_clinic.id */
     private Long clinicId;
 
-    /** 患者ID */
+    /** 患者ID，关联 t_patient.id */
     private Long patientId;
 
-    /** 关联就诊ID */
+    /** 关联就诊ID，关联 t_visit.id（可选） */
     private Long visitId;
 
     /** 计划回访时间 */
@@ -44,7 +45,7 @@ public class BizFollowUp extends BaseEntity {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private Date actualTime;
 
-    /** 回访类型 */
+    /** 回访类型（电话/微信/到店等） */
     private String followType;
 
     /** 回访状态：0待回访 1已完成 2已取消 */
@@ -56,14 +57,14 @@ public class BizFollowUp extends BaseEntity {
     /** 回访结果 */
     private String result;
 
-    /** 负责人ID */
+    /** 负责人/回访人ID，关联 t_employee.id */
     private Long ownerId;
 
-    /** 患者姓名（非表字段） */
+    /** 患者姓名（非表字段，列表/详情回显） */
     @TableField(exist = false)
     private String patientName;
 
-    /** 负责人姓名（非表字段） */
+    /** 负责人姓名（非表字段，列表/详情回显） */
     @TableField(exist = false)
     private String ownerName;
 }

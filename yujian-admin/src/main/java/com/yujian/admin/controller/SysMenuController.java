@@ -19,7 +19,12 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 /**
- * 菜单/权限管理接口
+ * 菜单/权限管理接口。
+ * <p>
+ * 提供系统菜单的增删改查、树形结构查询，以及按员工查询菜单树与权限标识。
+ * 菜单为全局维度，不按当前诊所隔离；需已登录。
+ * 前端按钮权限分别对应 system:menu:query/add/edit/remove。
+ * </p>
  *
  * @author Zhangyk
  * @date 2026-08-14 16:50
@@ -33,10 +38,11 @@ public class SysMenuController {
     private ISysMenuService menuService;
 
     /**
-     * 菜单扁平列表
+     * 按条件查询菜单扁平列表。
      *
-     * @param menu 筛选条件
-     * @return 菜单列表
+     * @param menu 筛选条件，支持 menuName（菜单名称）、menuType（M目录/C菜单/F按钮）、
+     *             platform（web/mobile）、status（0正常 1停用）等字段
+     * @return 统一响应；data 为 {@link SysMenu} 列表
      */
     @ApiOperation("菜单列表")
     @GetMapping("/list")
@@ -45,10 +51,10 @@ public class SysMenuController {
     }
 
     /**
-     * 菜单树
+     * 查询指定平台的菜单树（服务端已组装 children）。
      *
-     * @param platform web 或 mobile，默认 web
-     * @return 菜单树
+     * @param platform 适用平台：web 网页端，mobile 移动端，默认 web
+     * @return 统一响应；data 为 {@link SysMenu} 树形列表，根节点含嵌套 children
      */
     @ApiOperation("菜单树")
     @GetMapping("/tree")
@@ -57,10 +63,10 @@ public class SysMenuController {
     }
 
     /**
-     * 菜单详情
+     * 根据主键查询菜单详情。
      *
      * @param id 菜单ID
-     * @return 菜单
+     * @return 统一响应；data 为 {@link SysMenu} 实体，含菜单完整信息
      */
     @ApiOperation("菜单详情")
     @GetMapping("/{id}")
@@ -69,10 +75,10 @@ public class SysMenuController {
     }
 
     /**
-     * 新增菜单
+     * 新增菜单或按钮权限节点。
      *
-     * @param menu 菜单信息
-     * @return 操作结果
+     * @param menu 菜单信息，含 menuName、parentId、menuType、path、perms 等字段
+     * @return 统一响应；data 为空，code=200 表示新增成功
      */
     @ApiOperation("新增菜单")
     @PostMapping
@@ -81,10 +87,10 @@ public class SysMenuController {
     }
 
     /**
-     * 修改菜单
+     * 修改菜单或按钮权限节点。
      *
-     * @param menu 菜单信息（须含 id）
-     * @return 操作结果
+     * @param menu 菜单信息，id 必填，其余为待更新字段
+     * @return 统一响应；data 为空，code=200 表示修改成功
      */
     @ApiOperation("修改菜单")
     @PostMapping("/edit")
@@ -93,10 +99,10 @@ public class SysMenuController {
     }
 
     /**
-     * 删除菜单
+     * 根据主键删除菜单（存在子菜单时不允许删除）。
      *
      * @param id 菜单ID
-     * @return 操作结果
+     * @return 统一响应；data 为空，code=200 表示删除成功
      */
     @ApiOperation("删除菜单")
     @PostMapping("/remove/{id}")
@@ -105,11 +111,14 @@ public class SysMenuController {
     }
 
     /**
-     * 查询员工菜单树
+     * 查询指定员工在指定平台下可见的菜单树。
+     * <p>
+     * 按员工角色聚合菜单，常用于角色授权预览或员工权限核查。
+     * </p>
      *
      * @param employeeId 员工ID
-     * @param platform   web / mobile
-     * @return 菜单树
+     * @param platform   适用平台：web / mobile，默认 web
+     * @return 统一响应；data 为 {@link SysMenu} 树形列表，仅含该员工有权限的菜单
      */
     @ApiOperation("员工菜单树")
     @GetMapping("/employee/{employeeId}")
@@ -120,10 +129,13 @@ public class SysMenuController {
     }
 
     /**
-     * 查询员工权限标识
+     * 查询指定员工的权限标识列表。
+     * <p>
+     * 返回该员工所有角色关联菜单的 perms 字段集合，用于按钮级鉴权。
+     * </p>
      *
      * @param employeeId 员工ID
-     * @return 权限标识列表
+     * @return 统一响应；data 为 String 类型的权限标识列表，如 system:employee:list
      */
     @ApiOperation("员工权限标识")
     @GetMapping("/employee/{employeeId}/perms")

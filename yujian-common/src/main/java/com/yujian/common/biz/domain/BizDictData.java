@@ -7,8 +7,10 @@ import com.yujian.common.core.domain.BaseEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+
 /**
- * 数据字典项实体，对应表 t_dict_data
+ * 数据字典项实体，对应表 t_dict_data。
+ * 用于业务接口请求/响应数据传输（字典项维护、前端下拉/标签渲染等场景）。
  *
  * @author Zhangyk
  * @date 2026-08-14 16:50
@@ -17,7 +19,6 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 @TableName("t_dict_data")
 public class BizDictData extends BaseEntity {
-
     private static final long serialVersionUID = 1L;
 
     /** 主键ID */
@@ -27,16 +28,16 @@ public class BizDictData extends BaseEntity {
     /** 字典类型编码，关联 t_dict_type.dict_type */
     private String dictType;
 
-    /** 字典标签（展示名） */
+    /** 字典标签（前端展示名） */
     private String dictLabel;
 
-    /** 字典键值 */
+    /** 字典键值（业务存储值） */
     private String dictValue;
 
-    /** 前端样式类名 */
+    /** 前端样式类名（如标签颜色 class） */
     private String cssClass;
 
-    /** 排序号 */
+    /** 排序号，数值越小越靠前 */
     private Integer sortOrder;
 
     /** 状态：0正常 1停用 */

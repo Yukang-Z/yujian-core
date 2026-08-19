@@ -8,7 +8,8 @@ import lombok.Data;
 import java.io.Serializable;
 
 /**
- * 患者-标签关联实体，对应表 t_patient_tag_rel
+ * 患者-标签关联实体，对应表 t_patient_tag_rel。
+ * 用于业务接口请求/响应数据传输（患者打标签、标签批量保存等场景）。
  *
  * @author Zhangyk
  * @date 2026-08-14 16:50
@@ -23,9 +24,9 @@ public class BizPatientTagRel implements Serializable {
     @TableId(type = IdType.AUTO)
     private Long id;
 
-    /** 患者ID */
+    /** 患者ID，关联 t_patient.id */
     private Long patientId;
 
-    /** 标签ID */
+    /** 标签ID，关联 t_patient_tag.id */
     private Long tagId;
 }

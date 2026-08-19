@@ -18,7 +18,11 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 /**
- * 部门管理接口（按当前所选诊所隔离）
+ * 部门管理接口。
+ * <p>
+ * 提供当前诊所下部门的增删改查；数据按 Session 中当前所选诊所（clinicId）隔离。
+ * 需已登录且已选定诊所，否则拦截器返回「请先选择诊所后再操作」。
+ * </p>
  *
  * @author Zhangyk
  * @date 2026-08-14 16:50
@@ -32,10 +36,10 @@ public class SysDeptController {
     private ISysDeptService deptService;
 
     /**
-     * 当前诊所部门列表
+     * 查询当前诊所下的部门列表。
      *
-     * @param dept 筛选条件（deptName、status）
-     * @return 部门列表
+     * @param dept 筛选条件，支持 deptName（部门名称）、status（0正常 1停用）
+     * @return 统一响应；data 为 {@link SysDept} 列表，仅含当前诊所数据
      */
     @ApiOperation("部门列表")
     @GetMapping("/list")
@@ -44,10 +48,10 @@ public class SysDeptController {
     }
 
     /**
-     * 部门详情
+     * 根据主键查询部门详情。
      *
      * @param id 部门ID
-     * @return 部门
+     * @return 统一响应；data 为 {@link SysDept} 实体，含部门完整信息
      */
     @ApiOperation("部门详情")
     @GetMapping("/{id}")
@@ -56,10 +60,13 @@ public class SysDeptController {
     }
 
     /**
-     * 新增部门（未传 clinicId 时写入当前诊所）
+     * 在当前诊所下新增部门。
+     * <p>
+     * 请求体未传 clinicId 时，自动写入 Session 中的当前诊所ID。
+     * </p>
      *
-     * @param dept 部门信息
-     * @return 操作结果
+     * @param dept 部门信息，含 deptName、parentId 等字段
+     * @return 统一响应；data 为空，code=200 表示新增成功
      */
     @ApiOperation("新增部门")
     @PostMapping
@@ -68,10 +75,10 @@ public class SysDeptController {
     }
 
     /**
-     * 修改部门
+     * 修改部门信息。
      *
-     * @param dept 部门信息（须含 id）
-     * @return 操作结果
+     * @param dept 部门信息，id 必填，其余为待更新字段
+     * @return 统一响应；data 为空，code=200 表示修改成功
      */
     @ApiOperation("修改部门")
     @PostMapping("/edit")
@@ -80,10 +87,10 @@ public class SysDeptController {
     }
 
     /**
-     * 删除部门（存在下级则不允许删）
+     * 删除部门（存在下级部门时不允许删除）。
      *
      * @param id 部门ID
-     * @return 操作结果
+     * @return 统一响应；data 为空，code=200 表示删除成功
      */
     @ApiOperation("删除部门")
     @PostMapping("/remove/{id}")

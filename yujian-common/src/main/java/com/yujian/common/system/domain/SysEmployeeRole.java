@@ -8,7 +8,8 @@ import lombok.Data;
 import java.io.Serializable;
 
 /**
- * 员工-角色关联，对应表 t_employee_role
+ * 员工-角色关联实体，映射表 t_employee_role；
+ * 作为员工分配角色、角色绑定员工等接口的内部关联数据载体。
  *
  * @author Zhangyk
  * @date 2026-08-14 16:50
@@ -19,7 +20,7 @@ public class SysEmployeeRole implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    /** 主键 */
+    /** 主键ID */
     @TableId(type = IdType.AUTO)
     private Long id;
 

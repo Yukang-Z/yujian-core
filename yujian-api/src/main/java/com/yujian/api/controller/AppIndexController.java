@@ -9,12 +9,20 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * 客户端健康检查 / 示例接口
+ * 客户端（C 端）健康检查与示例接口。
+ *
+ * @author Zhangyk
+ * @date 2026-08-14 16:50
  */
 @RestController
 @RequestMapping("/app")
 public class AppIndexController {
 
+    /**
+     * 探测 yujian-api 服务是否可用。
+     *
+     * @return 统一响应，data 为 Map：service 为模块名（yujian-api），status 为运行状态（UP 表示正常）
+     */
     @GetMapping("/health")
     public R<Map<String, Object>> health() {
         Map<String, Object> data = new HashMap<String, Object>(4);

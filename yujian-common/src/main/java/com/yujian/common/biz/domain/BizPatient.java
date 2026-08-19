@@ -8,13 +8,14 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.yujian.common.core.domain.BaseEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 
+
 /**
- * 患者实体，对应表 t_patient
+ * 患者实体，对应表 t_patient。
+ * 用于业务接口请求/响应数据传输（建档、编辑、列表查询、详情、归档等场景）。
  *
  * @author Zhangyk
  * @date 2026-08-14 16:50
@@ -23,36 +24,35 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = true)
 @TableName("t_patient")
 public class BizPatient extends BaseEntity {
-
     private static final long serialVersionUID = 1L;
 
     /** 患者ID */
     @TableId(type = IdType.AUTO)
     private Long id;
 
-    /** 诊所ID */
+    /** 诊所ID，关联 t_clinic.id */
     private Long clinicId;
 
-    /** 病历号 */
+    /** 病历号（诊所内唯一） */
     private String medicalRecordNo;
 
     /** 姓名 */
     private String name;
 
-    /** 姓名拼音 */
+    /** 姓名拼音（检索用） */
     private String namePinyin;
 
-    /** 性别 0女 1男 2未知 */
+    /** 性别：0女 1男 2未知 */
     private Integer gender;
 
-    /** 星级 1-5 */
+    /** 星级：1-5 */
     private Integer starLevel;
 
     /** 生日 */
     @JsonFormat(pattern = "yyyy-MM-dd", timezone = "GMT+8")
     private Date birthday;
 
-    /** 年龄（冗余） */
+    /** 年龄（冗余字段，便于列表展示） */
     private Integer age;
 
     /** 手机号 */
@@ -67,13 +67,13 @@ public class BizPatient extends BaseEntity {
     /** 备用电话关系 */
     private String phoneRelation;
 
-    /** 身份证号 */
+    /** 身份证号/证件号码 */
     private String idNumber;
 
     /** 医保卡号 */
     private String medicareCardNo;
 
-    /** 医保余额 */
+    /** 医保余额（元） */
     private BigDecimal medicareBalance;
 
     /** 省 */
@@ -88,100 +88,100 @@ public class BizPatient extends BaseEntity {
     /** 详细地址 */
     private String address;
 
-    /** 居住区域 */
+    /** 居住区域（汇总描述） */
     private String residence;
 
-    /** 头像 */
+    /** 头像 URL */
     private String avatar;
 
-    /** 患者类型 1普通 2临时 */
+    /** 患者类型：1普通 2临时 */
     private Integer patientType;
 
-    /** 患者分类 */
+    /** 患者分类（业务自定义分类） */
     private String patientCategory;
 
-    /** 患者来源ID */
+    /** 患者来源ID，关联 t_patient_source.id */
     private Long sourceId;
 
-    /** 介绍人类型 */
+    /** 介绍人类型（patient患者/employee员工等） */
     private String introducerType;
 
-    /** 介绍人ID（患者/员工） */
+    /** 介绍人ID（患者ID或员工ID，由 introducerType 区分） */
     private Long introducerId;
 
-    /** 介绍人姓名 */
+    /** 介绍人姓名（冗余展示） */
     private String introducerName;
 
-    /** 主治医生 */
+    /** 主治医生ID，关联 t_employee.id */
     private Long doctorId;
 
-    /** 初诊医生 */
+    /** 初诊医生ID，关联 t_employee.id */
     private Long firstDoctorId;
 
     /** 初诊日期 */
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private Date firstVisitTime;
 
-    /** 复诊日期 */
+    /** 下次复诊日期 */
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private Date nextVisitTime;
 
-    /** 最近就诊医生 */
+    /** 最近就诊医生ID，关联 t_employee.id */
     private Long lastDoctorId;
 
     /** 最近就诊时间 */
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private Date lastVisitTime;
 
-    /** 欠费 */
+    /** 欠费金额（元） */
     private BigDecimal oweAmount;
 
-    /** 已收 */
+    /** 已收金额（元） */
     private BigDecimal paidAmount;
 
-    /** 预交款余额 */
+    /** 预交款余额（元） */
     private BigDecimal prepayAmount;
 
-    /** 消费总额 */
+    /** 消费总额（元） */
     private BigDecimal totalAmount;
 
-    /** 客单价 */
+    /** 客单价（元） */
     private BigDecimal avgAmount;
 
     /** 转介绍人数 */
     private Integer referralCount;
 
-    /** 创建人姓名 */
+    /** 创建人姓名（冗余展示） */
     private String creatorName;
 
-    /** 状态 0正常 1归档 */
+    /** 状态：0正常 1归档 */
     private Integer status;
 
-    /** 主治医生姓名（非表字段） */
+    /** 主治医生姓名（非表字段，列表/详情回显） */
     @TableField(exist = false)
     private String doctorName;
 
-    /** 初诊医生姓名（非表字段） */
+    /** 初诊医生姓名（非表字段，列表/详情回显） */
     @TableField(exist = false)
     private String firstDoctorName;
 
-    /** 最近就诊医生姓名（非表字段） */
+    /** 最近就诊医生姓名（非表字段，列表/详情回显） */
     @TableField(exist = false)
     private String lastDoctorName;
 
-    /** 患者来源名称（非表字段） */
+    /** 患者来源名称（非表字段，列表/详情回显） */
     @TableField(exist = false)
     private String sourceName;
 
-    /** 标签ID列表（非表字段，保存时写入关联表） */
+    /** 标签ID列表（非表字段，保存时写入 t_patient_tag_rel） */
     @TableField(exist = false)
     private List<Long> tagIds;
 
-    /** 标签名称，逗号分隔（非表字段） */
+    /** 标签名称，逗号分隔（非表字段，列表/详情回显） */
     @TableField(exist = false)
     private String tagNames;
 
-    /** 诊疗项目ID列表（非表字段） */
+    /** 诊疗项目ID列表（非表字段，业务扩展用） */
     @TableField(exist = false)
     private List<Long> itemIds;
 }

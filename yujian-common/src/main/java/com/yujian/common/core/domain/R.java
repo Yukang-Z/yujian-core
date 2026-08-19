@@ -5,7 +5,7 @@ import lombok.Data;
 import java.io.Serializable;
 
 /**
- * 统一 API 响应结果封装
+ * 统一 API 响应结果封装，作为各业务接口的标准回参结构（code / msg / data）。
  *
  * @param <T> 业务数据类型
  * @author Zhangyk
@@ -16,13 +16,13 @@ public class R<T> implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    /** 业务状态码，200 表示成功 */
+    /** 业务状态码：200 成功，500 服务端失败，其他值见业务错误码定义 */
     private int code;
 
-    /** 提示信息 */
+    /** 提示信息，供前端展示的操作结果文案 */
     private String msg;
 
-    /** 业务数据 */
+    /** 业务数据载荷，成功时返回具体对象、列表或分页结构 */
     private T data;
 
     /**

@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 患者管理接口（按当前所选诊所隔离）
+ * 患者管理接口，提供列表查询、档案聚合、增删改及快捷动作；按当前所选诊所隔离。
  *
  * @author Zhangyk
  * @date 2026-08-14 16:50
@@ -41,16 +41,16 @@ public class BizPatientController {
     private IBizPatientProfileService profileService;
 
     /**
-     * 患者分页列表
+     * 分页查询患者列表，支持关键字、医生、标签等条件筛选；按当前所选诊所隔离。
      *
-     * @param keyword       姓名/手机/病历号
-     * @param clinicId      忽略，以当前诊所为准
-     * @param doctorId      主治医生
-     * @param firstDoctorId 初诊医生
-     * @param tagId         标签
-     * @param pageNum       页码
-     * @param pageSize      每页条数
-     * @return 分页数据
+     * @param keyword       姓名/手机/病历号关键字，可选
+     * @param clinicId      诊所ID（前端传入将被忽略，以当前所选诊所为准）
+     * @param doctorId      主治医生ID，可选
+     * @param firstDoctorId 初诊医生ID，可选
+     * @param tagId         患者标签ID，可选
+     * @param pageNum       页码，默认 1
+     * @param pageSize      每页条数，默认 20
+     * @return 统一响应，data 为分页结果（records 为 {@link BizPatient} 列表、total 为总条数）
      */
     @ApiOperation("患者分页列表")
     @GetMapping("/list")
@@ -66,15 +66,15 @@ public class BizPatientController {
     }
 
     /**
-     * 左侧患者列表
+     * 查询患者侧栏列表，支持今日/全部/最近等视图；按当前所选诊所隔离。
      *
-     * @param type     today今日 / all全部 / recent最近
-     * @param clinicId 忽略
-     * @param keyword  关键字
-     * @param day      今日列表对应日期
-     * @param pageNum  页码
-     * @param pageSize 每页条数
-     * @return 分页数据
+     * @param type     列表类型：today 今日 / all 全部 / recent 最近
+     * @param clinicId 诊所ID（前端传入将被忽略，以当前所选诊所为准）
+     * @param keyword  姓名/手机/病历号关键字，可选
+     * @param day      今日列表对应日期（type=today 时使用），格式 yyyy-MM-dd
+     * @param pageNum  页码，默认 1
+     * @param pageSize 每页条数，默认 50
+     * @return 统一响应，data 为分页结果（records 为 {@link BizPatient} 列表、total 为总条数）
      */
     @ApiOperation("患者侧栏列表")
     @GetMapping("/sidebar")
@@ -90,12 +90,12 @@ public class BizPatientController {
     }
 
     /**
-     * 顶部全局搜索患者
+     * 顶部全局搜索患者，按关键字模糊匹配；按当前所选诊所隔离。
      *
-     * @param keyword  关键字，必填
-     * @param clinicId 忽略
-     * @param limit    条数上限
-     * @return 患者列表
+     * @param keyword  姓名/手机/病历号关键字，必填
+     * @param clinicId 诊所ID（前端传入将被忽略，以当前所选诊所为准）
+     * @param limit    返回条数上限，默认 20
+     * @return 统一响应，data 为 {@link BizPatient} 列表
      */
     @ApiOperation("搜索患者")
     @GetMapping("/search")
@@ -107,10 +107,10 @@ public class BizPatientController {
     }
 
     /**
-     * 档案聚合：详情头 + 价值卡片 + 最近日志
+     * 聚合查询患者档案页数据，含详情头、价值卡片与最近日志；按当前所选诊所隔离。
      *
      * @param id 患者ID
-     * @return patient / cards / logs
+     * @return 统一响应，data 为 Map：patient 为患者详情，cards 为价值卡片，logs 为最近操作日志
      */
     @ApiOperation("患者档案聚合")
     @GetMapping("/{id}/profile")
@@ -119,13 +119,13 @@ public class BizPatientController {
     }
 
     /**
-     * 就诊时间线
+     * 查询患者就诊时间线，可按时间范围过滤；按当前所选诊所隔离。
      *
      * @param id        患者ID
-     * @param clinicId  忽略
-     * @param beginTime 开始时间
-     * @param endTime   结束时间
-     * @return 时间线
+     * @param clinicId  诊所ID（前端传入将被忽略，以当前所选诊所为准）
+     * @param beginTime 就诊开始时间，可选
+     * @param endTime   就诊结束时间，可选
+     * @return 统一响应，data 为时间线节点列表（每条含就诊/处置等摘要信息）
      */
     @ApiOperation("就诊时间线")
     @GetMapping("/{id}/timeline")
@@ -140,10 +140,10 @@ public class BizPatientController {
     }
 
     /**
-     * 患者详情
+     * 查询患者基本信息详情；按当前所选诊所隔离。
      *
      * @param id 患者ID
-     * @return 患者
+     * @return 统一响应，data 为 {@link BizPatient} 实体
      */
     @ApiOperation("患者详情")
     @GetMapping("/{id}")
@@ -152,10 +152,10 @@ public class BizPatientController {
     }
 
     /**
-     * 新增患者（clinicId 由后端写入当前诊所）
+     * 新增患者，clinicId 由后端自动写入当前所选诊所；按当前所选诊所隔离。
      *
      * @param patient 患者信息
-     * @return 操作结果
+     * @return 统一响应，成功时 data 为空，失败时含错误提示
      */
     @ApiOperation("新增患者")
     @PostMapping
@@ -164,10 +164,10 @@ public class BizPatientController {
     }
 
     /**
-     * 修改患者
+     * 修改患者基本信息；按当前所选诊所隔离。
      *
      * @param patient 患者信息（须含 id）
-     * @return 操作结果
+     * @return 统一响应，成功时 data 为空，失败时含错误提示
      */
     @ApiOperation("修改患者")
     @PostMapping("/edit")
@@ -176,10 +176,10 @@ public class BizPatientController {
     }
 
     /**
-     * 删除患者
+     * 删除指定患者；按当前所选诊所隔离。
      *
      * @param id 患者ID
-     * @return 操作结果
+     * @return 统一响应，成功时 data 为空，失败时含错误提示
      */
     @ApiOperation("删除患者")
     @PostMapping("/remove/{id}")
@@ -188,11 +188,11 @@ public class BizPatientController {
     }
 
     /**
-     * 保存患者并执行动作
+     * 保存患者并执行后续动作（仅保存、保存并到店或保存并预约）；按当前所选诊所隔离。
      *
      * @param patient 患者信息
-     * @param action  save仅保存 / arrive保存并到店 / appoint保存并预约
-     * @return 患者ID与动作
+     * @param action  动作类型：save 仅保存 / arrive 保存并到店 / appoint 保存并预约，默认 save
+     * @return 统一响应，data 为 {@link PatientActionVO}（含 patientId 与 action）
      */
     @ApiOperation("保存患者并执行动作")
     @PostMapping("/saveWithAction")
