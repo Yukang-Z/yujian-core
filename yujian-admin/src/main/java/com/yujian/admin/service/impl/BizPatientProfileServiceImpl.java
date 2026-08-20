@@ -144,7 +144,7 @@ public class BizPatientProfileServiceImpl implements IBizPatientProfileService {
         List<BizAppointment> appts = appointmentMapper.selectAppointmentPage(
                 new Page<BizAppointment>(1, 200),
                 SecurityContextHolder.requireClinicId(clinicId),
-                null, null, null, null, null, null, patientId, beginTime, endTime).getRecords();
+                null, null, null, null, null, null, null, patientId, beginTime, endTime, null, null).getRecords();
         List<Map<String, Object>> timeline = new ArrayList<Map<String, Object>>();
         if (appts != null) {
             for (BizAppointment a : appts) {

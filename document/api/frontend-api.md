@@ -54,7 +54,8 @@
 1. 返回 `clinics`（可进入诊所列表）和 `needSelectClinic`
 2. 仅 1 个诊所：自动选中，`needSelectClinic=false`
 3. 多个诊所：必须调用 `POST /auth/selectClinic` 后再进业务页
-4. 患者、预约、员工、部门、基础业务数据 **一律按当前所选诊所查询**，请求里的 `clinicId` 会被忽略
+4. **写操作**（新增患者/预约等）：一律写入**会话当前诊所**，请求里的 `clinicId` 忽略
+5. **查询类**（医生列表 / 预约天视图 / 状态计数）：请求 `clinicId` 在账号授权诊所内**生效**；空则回退会话诊所；无权返回 `code=403`
 
 未选诊所访问业务接口：`code=400`，`msg=请先选择诊所后再操作`
 
@@ -292,10 +293,23 @@ Query：`pageNum`（默认 1）、`pageSize`（默认 20）
 | GET | `/biz/basic/source/tree` | — |
 | POST | `/biz/basic/source` | Body：`BizPatientSource` |
 | POST | `/biz/basic/source/remove/{id}` | — |
-| GET | `/biz/basic/item/list` | — |
+| GET | `/biz/basic/item/list` | Query：`clinicId?`（授权范围内生效）`keyword?`（名称/编码） |
 | POST | `/biz/basic/item` | Body：`BizTreatItem` |
 | POST | `/biz/basic/item/remove/{id}` | — |
-| GET | `/biz/basic/doctor/list` | 当前诊所医生列 |
+| GET | `/biz/basic/doctor/list` | Query：`clinicId?`（授权范围内生效）`keyword?`（姓名/手机） |
+| GET | `/biz/basic/consultant/list` | Query：`clinicId?`（授权范围内生效）`keyword?`（姓名/手机） |
+
+**医生 / 咨询师列表说明**
+
+- `clinicId` 空 = 会话当前诊所；有值且在账号 `clinics` 内 → 按该诊所列；无权 → `403`
+- 返回字段：`id` `name` `empNo` `position` `clinicId` `mobile`
+- 医生：在职、启用、职位含「医生/医师」
+- 咨询师：在职、启用、职位含「咨询」
+
+**诊疗项目列表说明（新增预约右栏）**
+
+- `clinicId` 规则同医生列表；仅返回该诊所启用项目
+- 返回含 `duration`（分钟，空则后端补 30）、`itemName` `itemCode` `itemColor` `sortOrder`
 
 **常用 dictType**：`appoint_status` `visit_type` `cancel_reason` `gender`
 
@@ -337,7 +351,9 @@ Query：`pageNum`（默认 1）、`pageSize`（默认 20）
 
 ---
 
-## 8. 预约 `/biz/appointment`（当前诊所）
+## 8. 预约 `/biz/appointment`
+
+> `POST` 新建的 `clinicId`、以及 `dayGrid` / `statusCount` 的 `clinicId` 均在授权范围内生效；列表等其它写读默认仍按会话诊所。
 
 ### 8.1 状态
 
@@ -352,31 +368,155 @@ Query：`pageNum`（默认 1）、`pageSize`（默认 20）
 | 7 | 已流失（取消） |
 | 8 | 预约未到 |
 
-`visitType`：`1` 初诊 / `2` 复诊
+`visitType`：`1` 初诊 / `2` 复诊 / `3` 新诊
+
+`appointType`（字典 `appoint_type`）：
+
+| 值 | 含义 | 说明 |
+|----|------|------|
+| `normal` | 普通预约 | 默认 |
+| `walkin` | 散客/到店 | |
+| `online` | 网络预约 | |
+| **`pending`** | **待确定** | 左侧「待确定预约」筛选用此字段，**不是** status |
+
+`appointSource`（字典 `appoint_source`）：`clinic` 院内 / `online` 网络 / `wechat` 微信
 
 ### 8.2 接口
 
 | 方法 | 路径 | 传参 |
 |------|------|------|
-| GET | `/biz/appointment/list` | `keyword?` `doctorId?` `consultantId?` `visitType?` `status?` `appointSource?` `beginTime?` `endTime?` `pageNum` `pageSize` |
+| GET | `/biz/appointment/list` | 见 8.5 |
 | GET | `/biz/appointment/calendar` | **`beginTime`** **`endTime`** `doctorId?` `status?`(逗号多状态) |
-| GET | `/biz/appointment/dayGrid` | **`day`**(yyyy-MM-dd) `status?` |
-| GET | `/biz/appointment/stats/statusCount` | `beginTime?` `endTime?` `doctorId?` |
-| GET | `/biz/appointment/stats/today` | 今日卡片 |
-| GET | `/biz/appointment/{id}` | 详情 |
-| POST | `/biz/appointment` | Body：`BizAppointment` |
-| POST | `/biz/appointment/edit` | Body：`BizAppointment` |
+| GET | `/biz/appointment/dayGrid` | **`day`** `clinicId?` `status?` `doctorIds?` |
+| GET | `/biz/appointment/stats/statusCount` | `clinicId?` `beginTime?` `endTime?` `doctorId?` |
+| GET | `/biz/appointment/stats/today` | 今日卡片（会话诊所） |
+| GET | `/biz/appointment/{id}` | 详情（含 `items` / `itemIds`） |
+| POST | `/biz/appointment` | Body：见 8.4（`clinicId` 授权生效） |
+| POST | `/biz/appointment/edit` | Body：`BizAppointment`（可传 `itemIds` 覆盖项目） |
 | POST | `/biz/appointment/remove/{id}` | Query：`cancelReason?`（进回收站） |
 | POST | `/biz/appointment/status` | `{ "id": 1, "status": 3, "remark": "" }` |
 | POST | `/biz/appointment/confirm/{id}` | 确认 |
 | POST | `/biz/appointment/cancel` | `{ "id": 1, "cancelReason": "..." }` |
 | POST | `/biz/appointment/seat/{id}` | 入座 |
 | GET | `/biz/appointment/{id}/logs` | 操作日志 |
-| GET | `/biz/appointment/recycle/list` | 回收站分页 |
+| GET | `/biz/appointment/recycle/list` | `clinicId?` 授权生效 + keyword/doctorId/consultantId/beginTime/endTime/page |
 | POST | `/biz/appointment/recycle/restore/{id}` | 还原 |
 | POST | `/biz/appointment/recycle/remove/{id}` | 彻底删除 |
+| POST | `/biz/appointment/recycle/clear` | 清空回收站：`clinicId?` `beginTime?` `endTime?`（按预约开始时间，可选） |
 
-新增预约会校验：患者属于当前诊所、医生时段不冲突。`clinicId` 由后端写入。
+### 8.3 天视图 `dayGrid`（预约日历 / 医生查询）
+
+**Query**
+
+| 参数 | 必填 | 说明 |
+|------|------|------|
+| day | 是 | `yyyy-MM-dd` |
+| clinicId | 否 | 授权诊所；空=会话诊所；无权 `403` |
+| status | 否 | 状态逗号分隔，如 `1,2,3` |
+| doctorIds | 否 | 医生 ID 逗号分隔，如 `0,12,15`；`0`=未指定医生；空=全部列 |
+
+**data**
+
+```json
+{
+  "day": "2026-08-20T00:00:00.000+0800",
+  "total": 12,
+  "columns": [
+    {
+      "doctorId": 0,
+      "doctorName": "未指定医生",
+      "count": 0,
+      "appointments": []
+    },
+    {
+      "doctorId": 12,
+      "doctorName": "张翰",
+      "count": 5,
+      "appointments": [ { "id": 1001, "patientName": "王小明", "startTime": "...", "endTime": "...", "status": 1 } ]
+    }
+  ]
+}
+```
+
+- 固定含 `doctorId=0`「未指定医生」列（若 `doctorIds` 未排除 0）
+- `columns[].count` = 该列 `appointments` 条数（与 status 筛选一致）；左侧「张翰 [5]」可直接用
+- `total` = 返回列内 count 合计
+
+### 8.4 新建预约
+
+- `clinicId` 空 = 会话诊所；有值须在账号授权诊所内，否则 `403`
+- 患者必须属于该 `clinicId`；项目（`itemIds`/`itemId`）也须属于该诊所
+- `startTime` 的日期不得早于今天
+- 多选项目：传 `itemIds`（有序）；首项同步写入主表 `itemId/itemName/itemColor`；明细表 `t_appointment_item`
+- 兼容旧入参：仅传 `itemId` 视为单项目
+- 详情 / `dayGrid` 回显带 `items: [{itemId,itemName,duration,sortOrder}]` 与 `itemIds`
+
+**Body 示例**
+
+```json
+{
+  "clinicId": 2,
+  "patientId": 2001,
+  "doctorId": 12,
+  "consultantId": 20,
+  "startTime": "2026-08-20 09:00:00",
+  "endTime": "2026-08-20 09:45:00",
+  "visitType": 1,
+  "itemIds": [3, 5],
+  "appointType": "normal",
+  "remark": ""
+}
+```
+
+| 字段 | 说明 |
+|------|------|
+| clinicId | 可选；授权诊所，空=会话 |
+| patientId | 必填 |
+| doctorId | 可空 / null 表示未指定医生 |
+| consultantId | 可选；咨询师 |
+| startTime / endTime | 必填，`endTime > startTime`；预约日 ≥ 今天 |
+| visitType | 1 初诊 / 2 复诊 / 3 新诊 |
+| itemIds | 推荐；多选项目 ID 数组 |
+| itemId / itemName | 兼容单项目 |
+| remark | 可选 |
+| appointType | normal / walkin / online / **pending**（待确定） |
+
+### 8.5 预约列表 `GET /list`
+
+**Query**
+
+| 参数 | 必填 | 说明 |
+|------|------|------|
+| clinicId | 否 | 授权诊所（门诊筛选）；空=会话；无权 `403` |
+| keyword | 否 | 患者姓名/手机/病历号 |
+| doctorId | 否 | 预约医生 |
+| consultantId | 否 | 咨询师 |
+| visitType | 否 | 1/2/3 |
+| status | 否 | 状态，逗号多选如 `1,2,6` |
+| appointType | 否 | `normal`/`walkin`/`online`/`pending`；左侧「待确定」= `pending` |
+| appointSource | 否 | clinic/online/wechat |
+| beginTime / endTime | 否 | 按 **预约开始时间** `start_time` |
+| createBeginTime / createEndTime | 否 | 按 **创建时间** `create_time` |
+| pageNum / pageSize | 否 | 默认 1 / 20 |
+
+**左侧快捷筛选约定**
+
+| 左侧项 | 传参 |
+|--------|------|
+| 所有预约 | 不传特殊筛选 |
+| 待确定预约 | `appointType=pending` |
+| 已过期预约 | `status=6` |
+| 已流失预约 | `status=7` |
+
+**反参**：在原有字段上补 `clinicName`、`items`/`itemIds`。
+
+### 8.6 回收站清空
+
+`POST /biz/appointment/recycle/clear?clinicId=&beginTime=&endTime=`
+
+- `clinicId` 授权生效；空=会话诊所
+- `beginTime`/`endTime` 可选，按预约 `start_time` 过滤后物理删除
+- 同步删除明细与操作日志；返回删除条数
 
 ---
 
@@ -410,8 +550,23 @@ Content-Type: application/json
 
 { "clinicId": 1 }
 
-### 3. 患者列表（按当前诊所，无需再传 clinicId）
+### 3. 患者列表（按会话诊所）
 GET http://localhost:8081/biz/patient/list?pageNum=1&pageSize=20
+Authorization: Bearer {{token}}
+
+### 3b. 医生查询：授权诊所下列医生
+GET http://localhost:8081/biz/basic/doctor/list?clinicId=2&keyword=
+Authorization: Bearer {{token}}
+
+### 3b2. 咨询师列表 / 诊疗项目（按预约门诊）
+GET http://localhost:8081/biz/basic/consultant/list?clinicId=2&keyword=
+Authorization: Bearer {{token}}
+
+GET http://localhost:8081/biz/basic/item/list?clinicId=2&keyword=
+Authorization: Bearer {{token}}
+
+### 3c. 医生查询：天视图（含人数 columns[].count）
+GET http://localhost:8081/biz/appointment/dayGrid?day=2026-08-20&clinicId=2&status=1,2,3
 Authorization: Bearer {{token}}
 
 ### 4. 员工列表
@@ -485,8 +640,12 @@ GET|POST  /biz/schedule...      (+ /edit /remove/{id})
 
 | 文件 | 说明 |
 |------|------|
-| `document/sql/00_full_schema.sql` | 完整表结构（含 `t_employee_clinic`） |
+| `document/sql/00_full_schema.sql` | 完整表结构（含 `t_employee_clinic`、`t_appointment_item`） |
 | `document/sql/01_init_data.sql` | 初始化数据 |
+| `document/sql/04_appointment_create_gap.sql` | 已有库增量：预约多项目 + 新诊字典 |
+| `document/sql/05_appointment_list_gap.sql` | 已有库增量：appoint_type 待确定 pending |
+| `document/api/appointment-create-api-gap.md` | 新增预约弹窗缺口说明（已落地） |
+| `document/api/appointment-list-api-gap.md` | 预约列表/回收站缺口说明（已落地） |
 | `document/sql/02_employee_clinic.sql` | 已有库增量：建关联表并迁移原 `clinic_id` |
 | `document/sql/03_drop_employee_dept_mobile.sql` | 已有库增量：去掉员工 `dept_id`、`mobile_link` |
 | Knife4j | http://localhost:8081/doc.html |

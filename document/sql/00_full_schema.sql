@@ -285,13 +285,13 @@ CREATE TABLE `t_appointment` (
   `consultant_id`   BIGINT(20)   DEFAULT NULL COMMENT '咨询师',
   `start_time`      DATETIME     NOT NULL COMMENT '开始时间',
   `end_time`        DATETIME     NOT NULL COMMENT '结束时间',
-  `visit_type`      TINYINT(4)   DEFAULT 2 COMMENT '1初诊 2复诊',
+  `visit_type`      TINYINT(4)   DEFAULT 2 COMMENT '1初诊 2复诊 3新诊',
   `status`          TINYINT(4)   DEFAULT 1 COMMENT '1已预约 2已确认 3已到达 4治疗中 5已离开 6已过期 7已流失 8预约未到',
   `item_id`         BIGINT(20)   DEFAULT NULL COMMENT '项目ID',
   `item_name`       VARCHAR(100) DEFAULT NULL COMMENT '项目名称',
   `triaged`         TINYINT(4)   DEFAULT 0 COMMENT '是否分诊',
   `registered`      TINYINT(4)   DEFAULT 0 COMMENT '是否挂号',
-  `appoint_type`    VARCHAR(30)  DEFAULT 'normal' COMMENT '预约类型 normal普通 walkin散客 online网络',
+  `appoint_type`    VARCHAR(30)  DEFAULT 'normal' COMMENT '预约类型 normal普通 walkin散客 online网络 pending待确定',
   `appoint_source`  VARCHAR(30)  DEFAULT 'clinic' COMMENT '预约来源 clinic院内 online网络 wechat微信',
   `cancel_reason`   VARCHAR(200) DEFAULT NULL COMMENT '取消/删除原因',
   `item_color`      VARCHAR(20)  DEFAULT NULL COMMENT '项目颜色（日历块）',
@@ -308,6 +308,21 @@ CREATE TABLE `t_appointment` (
   KEY `idx_patient` (`patient_id`),
   KEY `idx_status` (`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='预约表';
+
+-- ----------------------------
+-- 9.1 预约项目明细（多选）
+-- ----------------------------
+CREATE TABLE `t_appointment_item` (
+  `id`             BIGINT(20)   NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `appointment_id` BIGINT(20)   NOT NULL COMMENT '预约ID',
+  `item_id`        BIGINT(20)   DEFAULT NULL COMMENT '项目ID',
+  `item_name`      VARCHAR(100) DEFAULT NULL COMMENT '项目名称',
+  `duration`       INT(11)      DEFAULT 30 COMMENT '时长分钟',
+  `sort_order`     INT(11)      DEFAULT 0 COMMENT '排序（越小越靠前）',
+  `create_time`    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_appointment_id` (`appointment_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='预约项目明细';
 
 -- ----------------------------
 -- 10. 字典类型

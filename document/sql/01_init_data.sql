@@ -83,17 +83,18 @@ INSERT INTO `t_employee_clinic` (`employee_id`, `clinic_id`) VALUES (1, 1);
 -- 字典类型 / 字典数据
 -- ----------------------------
 INSERT INTO `t_dict_type` (`dict_name`, `dict_type`, `status`, `remark`) VALUES
-('就诊类型', 'visit_type', 0, '初诊/复诊'),
+('就诊类型', 'visit_type', 0, '初诊/复诊/新诊'),
 ('预约状态', 'appoint_status', 0, '预约状态机'),
 ('手机关系', 'mobile_relation', 0, '本人/亲属'),
 ('患者类型', 'patient_type', 0, '普通/临时'),
-('预约类型', 'appoint_type', 0, '普通/散客/网络'),
+('预约类型', 'appoint_type', 0, '普通/散客/网络/待确定'),
 ('预约来源', 'appoint_source', 0, '院内/网络/微信'),
 ('取消原因', 'cancel_reason', 0, '取消/删除原因');
 
 INSERT INTO `t_dict_data` (`dict_type`, `dict_label`, `dict_value`, `sort_order`, `status`) VALUES
 ('visit_type', '初诊', '1', 1, 0),
-('visit_type', '复诊', '2', 2, 0);
+('visit_type', '复诊', '2', 2, 0),
+('visit_type', '新诊', '3', 3, 0);
 
 INSERT INTO `t_dict_data` (`dict_type`, `dict_label`, `dict_value`, `css_class`, `sort_order`, `status`) VALUES
 ('appoint_status', '已预约', '1', 'booked', 1, 0),
@@ -117,6 +118,7 @@ INSERT INTO `t_dict_data` (`dict_type`, `dict_label`, `dict_value`, `sort_order`
 ('appoint_type', '普通预约', 'normal', 1, 0),
 ('appoint_type', '散客', 'walkin', 2, 0),
 ('appoint_type', '网络预约', 'online', 3, 0),
+('appoint_type', '待确定', 'pending', 4, 0),
 ('appoint_source', '院内', 'clinic', 1, 0),
 ('appoint_source', '网络', 'online', 2, 0),
 ('appoint_source', '微信', 'wechat', 3, 0),

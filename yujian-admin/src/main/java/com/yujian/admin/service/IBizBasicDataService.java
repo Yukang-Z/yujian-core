@@ -31,12 +31,15 @@ public interface IBizBasicDataService {
 
     int deleteSource(Long id);
 
-    List<BizTreatItem> selectTreatItemList(Long clinicId);
+    List<BizTreatItem> selectTreatItemList(Long clinicId, String keyword);
 
     int saveTreatItem(BizTreatItem item);
 
     int deleteTreatItem(Long id);
 
-    /** 可预约医生列表（日历列） */
-    List<?> selectDoctorList(Long clinicId);
+    /** 可预约医生列表（日历列）；clinicId 在授权范围内生效，可按 keyword 过滤 */
+    List<?> selectDoctorList(Long clinicId, String keyword);
+
+    /** 咨询师列表；clinicId 在授权范围内生效，可按 keyword 过滤 */
+    List<?> selectConsultantList(Long clinicId, String keyword);
 }

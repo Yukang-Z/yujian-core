@@ -8,14 +8,17 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.yujian.common.core.domain.BaseEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+
 import java.util.Date;
+import java.util.List;
 
 
 /**
  * 预约实体，对应表 t_appointment。
  * 用于业务接口请求/响应数据传输（预约创建/改期、日历展示、到诊分诊等场景）。
  * <p>
- * 预约状态取值：1已预约 2已确认 3已到达 4治疗中 5已离开 6已过期 7已流失 8预约未到
+ * 预约状态取值：1已预约 2已确认 3已到达 4治疗中 5已离开 6已过期 7已流失 8预约未到；
+ * 预约类型：normal普通 / walkin散客 / online网络 / pending待确定（左侧「待确定」筛此字段，非 status）。
  * </p>
  *
  * @author Zhangyk
@@ -26,6 +29,18 @@ import java.util.Date;
 @TableName("t_appointment")
 public class BizAppointment extends BaseEntity {
     private static final long serialVersionUID = 1L;
+
+    /** 预约类型常量：普通预约 */
+    public static final String APPOINT_TYPE_NORMAL = "normal";
+
+    /** 预约类型常量：散客/到店 */
+    public static final String APPOINT_TYPE_WALKIN = "walkin";
+
+    /** 预约类型常量：网络预约 */
+    public static final String APPOINT_TYPE_ONLINE = "online";
+
+    /** 预约类型常量：待确定（左侧快捷筛选，非 status） */
+    public static final String APPOINT_TYPE_PENDING = "pending";
 
     /** 状态常量：1已预约 */
     public static final int STATUS_BOOKED = 1;
@@ -50,6 +65,15 @@ public class BizAppointment extends BaseEntity {
 
     /** 状态常量：8预约未到 */
     public static final int STATUS_MISSED = 8;
+
+    /** 预约来源常量：院内 */
+    public static final String APPOINT_SOURCE_CLINIC = "clinic";
+
+    /** 预约来源常量：网络 */
+    public static final String APPOINT_SOURCE_ONLINE = "online";
+
+    /** 预约来源常量：微信 */
+    public static final String APPOINT_SOURCE_WECHAT = "wechat";
 
     /** 预约ID */
     @TableId(type = IdType.AUTO)
@@ -78,17 +102,30 @@ public class BizAppointment extends BaseEntity {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private Date endTime;
 
-    /** 就诊类型：1初诊 2复诊 */
+    /** 就诊类型：1初诊 2复诊 3新诊 */
     private Integer visitType;
 
     /** 预约状态：1已预约 2已确认 3已到达 4治疗中 5已离开 6已过期 7已流失 8预约未到 */
     private Integer status;
 
-    /** 预约项目ID，关联 t_treatment_item.id */
+    /** 预约项目ID（主表冗余首项），关联 t_treatment_item.id */
     private Long itemId;
 
-    /** 预约项目名称（冗余展示） */
+    /** 预约项目名称（主表冗余首项，列表/日历展示） */
     private String itemName;
+
+    /**
+     * 预约项目 ID 列表（非表字段，入参多选；有序，首项同步写入 itemId/itemName/itemColor）。
+     * 新建/修改时传入则全量覆盖明细表；不传则兼容仅 itemId 单项目。
+     */
+    @TableField(exist = false)
+    private List<Long> itemIds;
+
+    /**
+     * 预约项目明细（非表字段，详情/日历回显）
+     */
+    @TableField(exist = false)
+    private List<BizAppointmentItem> items;
 
     /** 是否已分诊：0否 1是 */
     private Integer triaged;
@@ -96,7 +133,7 @@ public class BizAppointment extends BaseEntity {
     /** 是否已挂号：0否 1是 */
     private Integer registered;
 
-    /** 预约类型：normal普通 / walkin散客 / online网络 */
+    /** 预约类型：normal普通 / walkin散客(到店) / online网络 / pending待确定 */
     private String appointType;
 
     /** 预约来源：clinic院内 / online网络 / wechat微信 */
@@ -110,6 +147,10 @@ public class BizAppointment extends BaseEntity {
 
     /** 预约人姓名（冗余展示） */
     private String creatorName;
+
+    /** 诊所名称（非表字段，列表回显） */
+    @TableField(exist = false)
+    private String clinicName;
 
     /** 患者姓名（非表字段，列表/日历回显） */
     @TableField(exist = false)

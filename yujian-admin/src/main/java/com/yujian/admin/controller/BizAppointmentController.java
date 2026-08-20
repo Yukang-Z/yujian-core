@@ -7,6 +7,7 @@ import com.yujian.common.biz.domain.BizAppointment;
 import com.yujian.common.biz.domain.BizAppointmentLog;
 import com.yujian.common.core.domain.PageResult;
 import com.yujian.common.core.domain.R;
+import com.yujian.common.exception.BusinessException;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -27,7 +28,11 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * 预约管理接口，提供列表、日历、状态流转及回收站能力；按当前所选诊所隔离。
+ * 预约管理接口：列表 / 天视图 / 新建改删 / 回收站 / 日志。
+ * <p>
+ * 列表、天视图、回收站的 clinicId 在账号授权诊所范围内生效；
+ * 按 ID 的读写在服务层校验预约所属诊所，防止跨店越权。
+ * </p>
  *
  * @author Zhangyk
  * @date 2026-08-14 16:50
@@ -41,45 +46,57 @@ public class BizAppointmentController {
     private IBizAppointmentService appointmentService;
 
     /**
-     * 分页查询预约列表，支持多条件筛选；按当前所选诊所隔离。
+     * 分页查询预约列表；clinicId 授权生效；支持创建时间、预约类型、状态多选。
+     * <p>
+     * 左侧「待确定预约」传 appointType=pending（非 status）。
+     * </p>
      *
-     * @param keyword       患者姓名/手机/病历号关键字，可选
-     * @param clinicId      诊所ID（前端传入将被忽略，以当前所选诊所为准）
-     * @param doctorId      医生ID，可选
-     * @param consultantId  咨询师ID，可选
-     * @param visitType     就诊类型：1 初诊 / 2 复诊，可选
-     * @param status        预约状态，可选
-     * @param appointSource 预约来源，可选
-     * @param beginTime     预约开始时间，可选
-     * @param endTime       预约结束时间，可选
-     * @param pageNum       页码，默认 1
-     * @param pageSize      每页条数，默认 20
-     * @return 统一响应，data 为分页结果（records 为 {@link BizAppointment} 列表、total 为总条数）
+     * @param keyword         患者姓名/手机/病历号关键字，可选
+     * @param clinicId        授权诊所ID，空=会话当前诊所
+     * @param doctorId        医生ID，可选
+     * @param consultantId    咨询师ID，可选
+     * @param visitType       就诊类型：1初诊/2复诊/3新诊，可选
+     * @param status          预约状态，逗号多选如 1,2,6，可选
+     * @param appointType     预约类型：normal/walkin/online/pending，可选
+     * @param appointSource   预约来源，可选
+     * @param beginTime       预约开始时间起，可选
+     * @param endTime         预约开始时间止，可选
+     * @param createBeginTime 创建时间起，可选
+     * @param createEndTime   创建时间止，可选
+     * @param pageNum         页码，默认 1
+     * @param pageSize        每页条数，默认 20
+     * @return 统一响应，data 为分页结果（含 clinicName、items）
      */
     @ApiOperation("预约分页列表")
     @GetMapping("/list")
     public R<PageResult<BizAppointment>> list(
             @ApiParam("关键字") @RequestParam(required = false) String keyword,
-            @ApiParam("诊所ID（忽略）") @RequestParam(required = false) Long clinicId,
+            @ApiParam("诊所ID（授权范围内生效）") @RequestParam(required = false) Long clinicId,
             @ApiParam("医生ID") @RequestParam(required = false) Long doctorId,
             @ApiParam("咨询师ID") @RequestParam(required = false) Long consultantId,
             @ApiParam("就诊类型") @RequestParam(required = false) Integer visitType,
-            @ApiParam("状态") @RequestParam(required = false) Integer status,
+            @ApiParam("状态，逗号分隔") @RequestParam(required = false) String status,
+            @ApiParam("预约类型 normal/walkin/online/pending") @RequestParam(required = false) String appointType,
             @ApiParam("预约来源") @RequestParam(required = false) String appointSource,
-            @ApiParam("开始时间") @RequestParam(required = false)
+            @ApiParam("预约开始时间起") @RequestParam(required = false)
             @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") Date beginTime,
-            @ApiParam("结束时间") @RequestParam(required = false)
+            @ApiParam("预约开始时间止") @RequestParam(required = false)
             @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") Date endTime,
+            @ApiParam("创建时间起") @RequestParam(required = false)
+            @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") Date createBeginTime,
+            @ApiParam("创建时间止") @RequestParam(required = false)
+            @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") Date createEndTime,
             @ApiParam("页码") @RequestParam(defaultValue = "1") long pageNum,
             @ApiParam("每页条数") @RequestParam(defaultValue = "20") long pageSize) {
         return R.ok(appointmentService.selectPage(keyword, clinicId, doctorId, consultantId,
-                visitType, status, appointSource, beginTime, endTime, pageNum, pageSize));
+                visitType, parseStatus(status), appointType, appointSource,
+                beginTime, endTime, createBeginTime, createEndTime, pageNum, pageSize));
     }
 
     /**
-     * 查询周/月日历视图的预约扁平列表；按当前所选诊所隔离。
+     * 查询周/月日历视图的预约扁平列表；clinicId 授权范围内生效。
      *
-     * @param clinicId  诊所ID（前端传入将被忽略，以当前所选诊所为准）
+     * @param clinicId  授权诊所ID，空=会话当前诊所
      * @param beginTime 时间范围开始，必填
      * @param endTime   时间范围结束，必填
      * @param doctorId  医生ID，可选
@@ -89,7 +106,7 @@ public class BizAppointmentController {
     @ApiOperation("预约日历")
     @GetMapping("/calendar")
     public R<List<BizAppointment>> calendar(
-            @ApiParam("诊所ID（忽略）") @RequestParam(required = false) Long clinicId,
+            @ApiParam("诊所ID（授权范围内生效）") @RequestParam(required = false) Long clinicId,
             @ApiParam(value = "开始时间", required = true)
             @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") Date beginTime,
             @ApiParam(value = "结束时间", required = true)
@@ -100,36 +117,38 @@ public class BizAppointmentController {
     }
 
     /**
-     * 查询指定日期的预约天视图，按医生分列展示；按当前所选诊所隔离。
+     * 查询指定日期的预约天视图，按医生分列；clinicId 在授权范围内生效。
      *
-     * @param clinicId 诊所ID（前端传入将被忽略，以当前所选诊所为准）
-     * @param day      日期，格式 yyyy-MM-dd，必填
-     * @param status   预约状态，多个以逗号分隔，可选
-     * @return 统一响应，data 为 Map：day 为日期，columns 为按医生分列的预约数据，total 为总数
+     * @param clinicId  授权诊所ID，空=会话当前诊所
+     * @param day       日期，格式 yyyy-MM-dd，必填
+     * @param status    预约状态，多个以逗号分隔，可选
+     * @param doctorIds 医生ID逗号分隔（含 0=未指定），空=全部列
+     * @return 统一响应，data 为 Map：day / columns[{doctorId,doctorName,count,appointments}] / total
      */
     @ApiOperation("预约天视图")
     @GetMapping("/dayGrid")
     public R<Map<String, Object>> dayGrid(
-            @ApiParam("诊所ID（忽略）") @RequestParam(required = false) Long clinicId,
+            @ApiParam("诊所ID（授权范围内生效）") @RequestParam(required = false) Long clinicId,
             @ApiParam(value = "日期", required = true)
             @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") Date day,
-            @ApiParam("状态") @RequestParam(required = false) String status) {
-        return R.ok(appointmentService.selectDayGrid(clinicId, day, parseStatus(status)));
+            @ApiParam("状态，逗号分隔") @RequestParam(required = false) String status,
+            @ApiParam("医生ID，逗号分隔，0=未指定") @RequestParam(required = false) String doctorIds) {
+        return R.ok(appointmentService.selectDayGrid(clinicId, day, parseStatus(status), parseLongIds(doctorIds)));
     }
 
     /**
-     * 统计各预约状态的数量，用于筛选栏计数；按当前所选诊所隔离。
+     * 统计各预约状态的数量；clinicId 与 dayGrid 同一规则（授权范围内生效）。
      *
-     * @param clinicId  诊所ID（前端传入将被忽略，以当前所选诊所为准）
+     * @param clinicId  授权诊所ID，空=会话当前诊所
      * @param beginTime 统计开始时间，可选
      * @param endTime   统计结束时间，可选
      * @param doctorId  医生ID，可选
-     * @return 统一响应，data 为 Map，键为状态码、值为对应数量
+     * @return 统一响应，data 为 Map（all/booked/confirmed/.../byStatus）
      */
     @ApiOperation("预约状态计数")
     @GetMapping("/stats/statusCount")
     public R<Map<String, Object>> statusCount(
-            @ApiParam("诊所ID（忽略）") @RequestParam(required = false) Long clinicId,
+            @ApiParam("诊所ID（授权范围内生效）") @RequestParam(required = false) Long clinicId,
             @ApiParam("开始时间") @RequestParam(required = false)
             @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") Date beginTime,
             @ApiParam("结束时间") @RequestParam(required = false)
@@ -151,10 +170,10 @@ public class BizAppointmentController {
     }
 
     /**
-     * 查询预约详情；按当前所选诊所隔离。
+     * 查询预约详情（含 itemIds/items）；须属账号授权诊所。
      *
      * @param id 预约ID
-     * @return 统一响应，data 为 {@link BizAppointment} 实体
+     * @return 统一响应，data 为 {@link BizAppointment}
      */
     @ApiOperation("预约详情")
     @GetMapping("/{id}")
@@ -163,9 +182,9 @@ public class BizAppointmentController {
     }
 
     /**
-     * 新增预约，clinicId 由后端自动写入当前所选诊所；按当前所选诊所隔离。
+     * 新增预约；clinicId 在授权范围内生效（空=会话诊所），患者/项目按该诊所校验。
      *
-     * @param appointment 预约信息
+     * @param appointment 预约信息（可含 itemIds 多选、visitType=1/2/3）
      * @return 统一响应，成功时 data 为空，失败时含错误提示
      */
     @ApiOperation("新增预约")
@@ -175,7 +194,7 @@ public class BizAppointmentController {
     }
 
     /**
-     * 修改预约信息；按当前所选诊所隔离。
+     * 修改预约；禁止改诊所；可传 itemIds 覆盖项目；历史单可改备注，改期新日期不得早于今天。
      *
      * @param appointment 预约信息（须含 id）
      * @return 统一响应，成功时 data 为空，失败时含错误提示
@@ -262,23 +281,23 @@ public class BizAppointmentController {
     }
 
     /**
-     * 分页查询回收站中的已删除预约；按当前所选诊所隔离。
+     * 分页查询回收站；clinicId 授权范围内生效。
      *
      * @param keyword      患者姓名/手机/病历号关键字，可选
-     * @param clinicId     诊所ID（前端传入将被忽略，以当前所选诊所为准）
+     * @param clinicId     授权诊所ID，空=会话当前诊所
      * @param doctorId     医生ID，可选
      * @param consultantId 咨询师ID，可选
-     * @param beginTime    预约开始时间，可选
-     * @param endTime      预约结束时间，可选
+     * @param beginTime    预约开始时间起，可选
+     * @param endTime      预约开始时间止，可选
      * @param pageNum      页码，默认 1
      * @param pageSize     每页条数，默认 20
-     * @return 统一响应，data 为分页结果（records 为 {@link BizAppointment} 列表、total 为总条数）
+     * @return 统一响应，data 为分页结果
      */
     @ApiOperation("预约回收站")
     @GetMapping("/recycle/list")
     public R<PageResult<BizAppointment>> recycleList(
             @ApiParam("关键字") @RequestParam(required = false) String keyword,
-            @ApiParam("诊所ID（忽略）") @RequestParam(required = false) Long clinicId,
+            @ApiParam("诊所ID（授权范围内生效）") @RequestParam(required = false) Long clinicId,
             @ApiParam("医生ID") @RequestParam(required = false) Long doctorId,
             @ApiParam("咨询师ID") @RequestParam(required = false) Long consultantId,
             @ApiParam("开始时间") @RequestParam(required = false)
@@ -316,7 +335,26 @@ public class BizAppointmentController {
     }
 
     /**
-     * 将逗号分隔的预约状态字符串解析为整数列表。
+     * 清空回收站（物理删除）；clinicId 授权生效；可选按预约开始时间范围过滤。
+     *
+     * @param clinicId  授权诊所ID，空=会话
+     * @param beginTime 预约开始时间起，可选
+     * @param endTime   预约开始时间止，可选
+     * @return 统一响应，data 为删除条数
+     */
+    @ApiOperation("清空回收站")
+    @PostMapping("/recycle/clear")
+    public R<Integer> clearRecycle(
+            @ApiParam("诊所ID（授权范围内生效）") @RequestParam(required = false) Long clinicId,
+            @ApiParam("预约开始时间起") @RequestParam(required = false)
+            @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") Date beginTime,
+            @ApiParam("预约开始时间止") @RequestParam(required = false)
+            @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") Date endTime) {
+        return R.ok(appointmentService.clearRecycle(clinicId, beginTime, endTime));
+    }
+
+    /**
+     * 将逗号分隔的预约状态字符串解析为整数列表；非法数字抛业务异常。
      *
      * @param status 状态字符串，如 "1,2,3"
      * @return 状态整数列表；入参为空或空白时返回 null
@@ -325,9 +363,35 @@ public class BizAppointmentController {
         if (status == null || status.trim().isEmpty()) {
             return null;
         }
-        return Arrays.stream(status.split(","))
-                .filter(s -> s.trim().length() > 0)
-                .map(Integer::valueOf)
-                .collect(Collectors.toList());
+        try {
+            return Arrays.stream(status.split(","))
+                    .map(String::trim)
+                    .filter(s -> s.length() > 0)
+                    .map(Integer::valueOf)
+                    .collect(Collectors.toList());
+        } catch (NumberFormatException e) {
+            throw new BusinessException("预约状态参数不正确");
+        }
+    }
+
+    /**
+     * 将逗号分隔的医生 ID 字符串解析为 Long 列表（可含 0 表示未指定医生）。
+     *
+     * @param doctorIds 如 "0,12,15"
+     * @return ID 列表；空入参返回 null（表示不过滤）
+     */
+    private List<Long> parseLongIds(String doctorIds) {
+        if (doctorIds == null || doctorIds.trim().isEmpty()) {
+            return null;
+        }
+        try {
+            return Arrays.stream(doctorIds.split(","))
+                    .map(String::trim)
+                    .filter(s -> s.length() > 0)
+                    .map(Long::valueOf)
+                    .collect(Collectors.toList());
+        } catch (NumberFormatException e) {
+            throw new BusinessException("医生ID参数不正确");
+        }
     }
 }

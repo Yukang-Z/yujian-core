@@ -3,6 +3,8 @@ package com.yujian.common.core.context;
 import com.yujian.common.core.domain.LoginUser;
 import com.yujian.common.exception.BusinessException;
 
+import java.util.List;
+
 /**
  * 当前登录用户 ThreadLocal 上下文
  * <p>
@@ -59,10 +61,10 @@ public final class SecurityContextHolder {
     }
 
     /**
-     * 解析业务诊所：一律使用登录后选定的当前诊所（忽略请求入参，避免串诊所）
+     * 写操作诊所：强制使用登录后选定的当前诊所（忽略请求入参，避免误写到未切换诊所）
      *
-     * @param requestClinicId 请求传入的诊所ID（可空，仅兼容旧入参，不作为数据范围）
-     * @return 当前诊所ID
+     * @param requestClinicId 请求传入的诊所ID（可空，写路径忽略）
+     * @return 当前会话诊所ID
      */
     public static Long requireClinicId(Long requestClinicId) {
         Long clinicId = getClinicId();
@@ -79,6 +81,39 @@ public final class SecurityContextHolder {
      */
     public static Long requireClinicId() {
         return requireClinicId(null);
+    }
+
+    /**
+     * 查询诊所：请求 clinicId 在授权范围内则生效，空则回退会话当前诊所
+     * <p>
+     * 用于医生列表、诊疗项目、咨询师列表、预约天视图、状态计数、**新建预约**等
+     * 「按所选授权诊所」的接口；禁止越权访问未授权诊所数据。
+     * </p>
+     *
+     * @param requestClinicId 请求诊所ID，可空
+     * @return 最终查询诊所ID
+     */
+    public static Long resolveAuthorizedClinicId(Long requestClinicId) {
+        LoginUser user = getLoginUser();
+        if (user == null) {
+            throw new BusinessException("请先登录后再操作");
+        }
+        Long current = user.getClinicId();
+        if (current == null) {
+            throw new BusinessException("请先选择诊所后再操作");
+        }
+        if (requestClinicId == null) {
+            return current;
+        }
+        if (requestClinicId.equals(current)) {
+            return requestClinicId;
+        }
+        // 校验是否在账号可进入诊所列表中
+        List<Long> authorized = user.getClinicIds();
+        if (authorized == null || !authorized.contains(requestClinicId)) {
+            throw new BusinessException(403, "无权访问该诊所");
+        }
+        return requestClinicId;
     }
 
     /**

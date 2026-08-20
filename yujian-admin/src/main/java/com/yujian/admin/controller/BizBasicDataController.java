@@ -22,7 +22,10 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 /**
- * 基础数据管理接口，涵盖字典、患者标签、来源、诊疗项目及医生列表；诊所级数据按当前所选诊所隔离。
+ * 基础数据管理接口：字典、患者标签/来源、诊疗项目、医生与咨询师列表。
+ * <p>
+ * 医生 / 咨询师 / 诊疗项目的 clinicId 在账号授权诊所范围内生效。
+ * </p>
  *
  * @author Zhangyk
  * @date 2026-08-14 16:50
@@ -157,15 +160,18 @@ public class BizBasicDataController {
     }
 
     /**
-     * 查询当前诊所诊疗项目列表；按当前所选诊所隔离。
+     * 查询授权诊所下诊疗项目列表（含 duration，空则默认 30）；支持名称/编码搜索。
      *
-     * @param clinicId 诊所ID（前端传入将被忽略，以当前所选诊所为准）
+     * @param clinicId 授权诊所ID，空=会话当前诊所
+     * @param keyword  项目名称/编码关键字，可选
      * @return 统一响应，data 为 {@link BizTreatItem} 列表
      */
     @ApiOperation("诊疗项目列表")
     @GetMapping("/item/list")
-    public R<List<BizTreatItem>> itemList(@ApiParam("诊所ID（忽略）") @RequestParam(required = false) Long clinicId) {
-        return R.ok(basicDataService.selectTreatItemList(clinicId));
+    public R<List<BizTreatItem>> itemList(
+            @ApiParam("诊所ID（授权范围内生效）") @RequestParam(required = false) Long clinicId,
+            @ApiParam("项目名称/编码关键字") @RequestParam(required = false) String keyword) {
+        return R.ok(basicDataService.selectTreatItemList(clinicId, keyword));
     }
 
     /**
@@ -193,14 +199,32 @@ public class BizBasicDataController {
     }
 
     /**
-     * 查询当前诊所医生列表，供预约日历等场景作为列头使用；按当前所选诊所隔离。
+     * 查询当前账号授权诊所下的医生列表（可传 clinicId / keyword）；写操作诊所仍用会话诊所。
      *
-     * @param clinicId 诊所ID（前端传入将被忽略，以当前所选诊所为准）
-     * @return 统一响应，data 为医生信息列表（Map 或 VO 结构，含 id、姓名等字段）
+     * @param clinicId 授权诊所ID，空=会话当前诊所
+     * @param keyword  姓名/手机号模糊，可选
+     * @return 统一响应，data 为医生列表（id/name/empNo/position/clinicId/mobile）
      */
     @ApiOperation("医生列表")
     @GetMapping("/doctor/list")
-    public R<List<?>> doctorList(@ApiParam("诊所ID（忽略）") @RequestParam(required = false) Long clinicId) {
-        return R.ok(basicDataService.selectDoctorList(clinicId));
+    public R<List<?>> doctorList(
+            @ApiParam("诊所ID（授权范围内生效）") @RequestParam(required = false) Long clinicId,
+            @ApiParam("姓名/手机号关键字") @RequestParam(required = false) String keyword) {
+        return R.ok(basicDataService.selectDoctorList(clinicId, keyword));
+    }
+
+    /**
+     * 查询当前账号授权诊所下的咨询师列表（可传 clinicId / keyword）。
+     *
+     * @param clinicId 授权诊所ID，空=会话当前诊所
+     * @param keyword  姓名/手机号模糊，可选
+     * @return 统一响应，data 为咨询师列表（id/name/empNo/position/clinicId/mobile）
+     */
+    @ApiOperation("咨询师列表")
+    @GetMapping("/consultant/list")
+    public R<List<?>> consultantList(
+            @ApiParam("诊所ID（授权范围内生效）") @RequestParam(required = false) Long clinicId,
+            @ApiParam("姓名/手机号关键字") @RequestParam(required = false) String keyword) {
+        return R.ok(basicDataService.selectConsultantList(clinicId, keyword));
     }
 }

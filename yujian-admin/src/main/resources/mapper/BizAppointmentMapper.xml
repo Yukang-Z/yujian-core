@@ -24,6 +24,7 @@
         <result property="itemColor" column="item_color"/>
         <result property="creatorName" column="creator_name"/>
         <result property="remark" column="remark"/>
+        <result property="clinicName" column="clinic_name"/>
         <result property="patientName" column="patient_name"/>
         <result property="medicalRecordNo" column="medical_record_no"/>
         <result property="mobile" column="mobile"/>
@@ -38,6 +39,7 @@
 
     <sql id="AppointSelect">
         SELECT a.*,
+               cl.clinic_name AS clinic_name,
                p.name AS patient_name,
                p.medical_record_no,
                p.mobile,
@@ -47,6 +49,7 @@
                n.name AS nurse_name,
                c.name AS consultant_name
         FROM t_appointment a
+                 LEFT JOIN t_clinic cl ON a.clinic_id = cl.id AND cl.is_delete = 0
                  LEFT JOIN t_patient p ON a.patient_id = p.id AND p.is_delete = 0
                  LEFT JOIN t_employee d ON a.doctor_id = d.id AND d.is_delete = 0
                  LEFT JOIN t_employee n ON a.nurse_id = n.id AND n.is_delete = 0
@@ -65,11 +68,17 @@
         <if test="doctorId != null">AND a.doctor_id = #{doctorId}</if>
         <if test="consultantId != null">AND a.consultant_id = #{consultantId}</if>
         <if test="visitType != null">AND a.visit_type = #{visitType}</if>
-        <if test="status != null">AND a.status = #{status}</if>
+        <if test="statusList != null and statusList.size() &gt; 0">
+            AND a.status IN
+            <foreach collection="statusList" item="st" open="(" separator="," close=")">#{st}</foreach>
+        </if>
+        <if test="appointType != null and appointType != ''">AND a.appoint_type = #{appointType}</if>
         <if test="appointSource != null and appointSource != ''">AND a.appoint_source = #{appointSource}</if>
         <if test="patientId != null">AND a.patient_id = #{patientId}</if>
         <if test="beginTime != null">AND a.start_time &gt;= #{beginTime}</if>
         <if test="endTime != null">AND a.start_time &lt;= #{endTime}</if>
+        <if test="createBeginTime != null">AND a.create_time &gt;= #{createBeginTime}</if>
+        <if test="createEndTime != null">AND a.create_time &lt;= #{createEndTime}</if>
         ORDER BY a.start_time ASC, a.id ASC
     </select>
 
@@ -128,6 +137,7 @@
 
     <select id="selectRecyclePage" resultMap="AppointResult">
         SELECT a.*,
+               cl.clinic_name AS clinic_name,
                p.name AS patient_name,
                p.medical_record_no,
                p.mobile,
@@ -137,6 +147,7 @@
                n.name AS nurse_name,
                c.name AS consultant_name
         FROM t_appointment a
+                 LEFT JOIN t_clinic cl ON a.clinic_id = cl.id
                  LEFT JOIN t_patient p ON a.patient_id = p.id
                  LEFT JOIN t_employee d ON a.doctor_id = d.id
                  LEFT JOIN t_employee n ON a.nurse_id = n.id
@@ -161,5 +172,43 @@
 
     <delete id="permanentDeleteById">
         DELETE FROM t_appointment WHERE id = #{id} AND is_delete = 1
+    </delete>
+
+    <!-- 含逻辑删除行，供回收站还原/彻底删除前做诊所授权校验 -->
+    <select id="selectByIdIgnoreDelete" resultMap="AppointResult">
+        SELECT a.*,
+               cl.clinic_name AS clinic_name,
+               p.name AS patient_name,
+               p.medical_record_no,
+               p.mobile,
+               p.gender,
+               p.age,
+               d.name AS doctor_name,
+               n.name AS nurse_name,
+               c.name AS consultant_name
+        FROM t_appointment a
+                 LEFT JOIN t_clinic cl ON a.clinic_id = cl.id
+                 LEFT JOIN t_patient p ON a.patient_id = p.id
+                 LEFT JOIN t_employee d ON a.doctor_id = d.id
+                 LEFT JOIN t_employee n ON a.nurse_id = n.id
+                 LEFT JOIN t_employee c ON a.consultant_id = c.id
+        WHERE a.id = #{id}
+        LIMIT 1
+    </select>
+
+    <select id="selectRecycleIds" resultType="long">
+        SELECT a.id
+        FROM t_appointment a
+        WHERE a.is_delete = 1
+        <if test="clinicId != null">AND a.clinic_id = #{clinicId}</if>
+        <if test="beginTime != null">AND a.start_time &gt;= #{beginTime}</if>
+        <if test="endTime != null">AND a.start_time &lt;= #{endTime}</if>
+    </select>
+
+    <delete id="permanentDeleteByIds">
+        DELETE FROM t_appointment
+        WHERE is_delete = 1
+          AND id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
     </delete>
 </mapper>
